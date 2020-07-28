@@ -9,8 +9,9 @@
   "dependencies": {
     "async": "3.2.0",
     "asyncjs-util": "1.2.3",
+    "bolt07": "1.5.2",
     "invoices": "1.1.1",
-    "ln-service": "49.3.7"
+    "ln-service": "49.4.1"
   },
   "description": "Lightning Network probing utilities",
   "devDependencies": {
@@ -32,7 +33,7 @@
     "url": "https://github.com/alexbosworth/probing.git"
   },
   "scripts": {
-    "test": "tap test/routing/*.js"
+    "test": "tap test/graph/*.js test/liquidity/*.js test/payments/*.js test/routing/*.js"
   },
-  "version": "1.0.1"
+  "version": "1.1.0"
 }

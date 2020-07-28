@@ -1,3 +1,4 @@
-const {subscribeToFindMaxPayable} = require('./routing');
+const {subscribeToFindMaxPayable} = require('./liquidity');
+const {subscribeToMultiPathProbe} = require('./liquidity');
 
-module.exports = {subscribeToFindMaxPayable};
+module.exports = {subscribeToFindMaxPayable, subscribeToMultiPathProbe};

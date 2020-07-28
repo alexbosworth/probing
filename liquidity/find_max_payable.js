@@ -5,8 +5,9 @@ const {getMaximum} = require('asyncjs-util');
 const {parsePaymentRequest} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
-const channelsFromHints = require('./channels_from_hints');
-const isRoutePayable = require('./is_route_payable');
+const {channelsFromHints} = require('./../routing');
+const {getPoliciesForChannels} = require('./../graph');
+const {isRoutePayable} = require('./../routing');
 const {maxHtlcAcrossRoute} = require('./../graph');
 
 const accuracy = 10000;
@@ -36,6 +37,23 @@ const to = tokens => Math.max(2, tokens - Math.round(Math.random() * 1000));
   @returns via cbk or Promise
   {
     [maximum]: <Maximum Routeable Tokens Number>
+    [route]: {
+      fee: <Route Fee Tokens Number>
+      fee_mtokens: <Route Fee Millitokens String>
+      hops: [{
+        channel: <Standard Format Channel Id String>
+        channel_capacity: <Channel Capacity Tokens Number>
+        fee: <Fee Number>
+        fee_mtokens: <Fee Millitokens String>
+        forward: <Forward Tokens Number>
+        forward_mtokens: <Forward Millitokens String>
+        public_key: <Forward Edge Public Key Hex String>
+        timeout: <Timeout Block Height Number>
+      }]
+      mtokens: <Total Fee-Inclusive Millitokens String>
+      timeout: <Route Timeout Height Number>
+      tokens: <Total Fee-Inclusive Tokens Number>
+    }
   }
 */
 module.exports = ({cltv, delay, emitter, hops, lnd, max, request}, cbk) => {
@@ -75,34 +93,15 @@ module.exports = ({cltv, delay, emitter, hops, lnd, max, request}, cbk) => {
       },
 
       // Get channels
-      channels: ['validate', ({}, cbk) => {
+      getChannels: ['validate', ({}, cbk) => {
         const {channels} = channelsFromHints({request});
 
-        return asyncMap(hops, (hop, cbk) => {
-          return getChannel({lnd, id: hop.channel}, (err, channel) => {
-            // Avoid returning an error when channel is known from hops
-            if (!!err && !!channels.find(n => n.id === hop.channel)) {
-              return cbk(null, channels.find(n => n.id === hop.channel));
-            }
-
-            // Exit early when there is an error getting the channel
-            if (!!err) {
-              return cbk(err);
-            }
-
-            return cbk(null, {
-              capacity: channel.capacity,
-              destination: hop.public_key,
-              id: hop.channel,
-              policies: channel.policies,
-            });
-          });
-        },
-        cbk);
+        return getPoliciesForChannels({channels, hops, lnd}, cbk);
       }],
 
       // Determine if route is payable with a reasonable amount
-      isMinimallyPayable: ['channels', ({channels}, cbk) => {
+      isMinimallyPayable: ['getChannels', ({getChannels}, cbk) => {
+        const {channels} = getChannels;
         const tokens = to(accuracy);
 
         return isRoutePayable({channels, cltv, lnd, tokens}, cbk);
@@ -110,19 +109,24 @@ module.exports = ({cltv, delay, emitter, hops, lnd, max, request}, cbk) => {
 
       // Find maximum
       findMax: [
-        'channels',
+        'getChannels',
         'isMinimallyPayable',
-        ({channels, isMinimallyPayable}, cbk) =>
+        ({getChannels, isMinimallyPayable}, cbk) =>
       {
         if (!isMinimallyPayable.is_payable) {
           return cbk(null, {maximum: Number()});
         }
 
         const attemptDelayMs = delay || defaultAttemptDelayMs;
+        const {channels} = getChannels;
         let isPayable = false;
         const routeMax = maxHtlcAcrossRoute({channels});
+        const routes = [];
 
-        const limit = to(min(routeMax.max_htlc_tokens, max));
+        const limit = Math.max(
+          accuracy + accuracy,
+          to(min(routeMax.max_htlc_tokens, max))
+        );
 
         return getMaximum({accuracy, from, to: limit}, ({cursor}, cbk) => {
           const tokens = cursor;
@@ -134,6 +138,10 @@ module.exports = ({cltv, delay, emitter, hops, lnd, max, request}, cbk) => {
             // Exit early when there is an error probing the route
             if (!!err) {
               return cbk(err);
+            }
+
+            if (!!res.is_payable) {
+              routes.push(res.route);
             }
 
             isPayable = !!res.is_payable ? tokens : isPayable;
@@ -150,7 +158,9 @@ module.exports = ({cltv, delay, emitter, hops, lnd, max, request}, cbk) => {
             return cbk(null, {maximum: Number()});
           }
 
-          return cbk(null, {maximum: res.maximum});
+          const [route] = routes.sort((a, b) => a.tokens - b.tokens).reverse();
+
+          return cbk(null, {route, maximum: res.maximum});
         });
       }],
     },

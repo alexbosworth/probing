@@ -6,6 +6,13 @@ const defaultCapacity = Number.MAX_SAFE_INTEGER;
 
   {
     [request]: <BOLT 11 Request String>
+    [routes]: [[{
+      [base_fee_mtokens]: <Base Fee Millitokens String>
+      [channel]: <Standard Format Channel Id String>
+      [cltv_delta]: <Final CLTV Expiration Blocks Delta Number>
+      [fee_rate]: <Fee Rate Millitokens Per Million Number>
+      public_key: <Forward Edge Public Key Hex String>
+    }]]
   }
 
   @returns
@@ -17,11 +24,7 @@ const defaultCapacity = Number.MAX_SAFE_INTEGER;
         [base_fee_mtokens]: <Base Fee Millitokens String>
         [cltv_delta]: <Locktime Delta Number>
         [fee_rate]: <Fees Charged Per Million Tokens Number>
-        [is_disabled]: <Channel Is Disabled Bool>
-        [max_htlc_mtokens]: <Maximum HTLC Millitokens Value String>
-        [min_htlc_mtokens]: <Minimum HTLC Millitokens Value String>
         public_key: <Node Public Key String>
-        [updated_at]: <Edge Last Updated At ISO 8601 Date String>
       }]
       transaction_id: <Transaction Id Hex String>
       transaction_vout: <Transaction Output Index Number>
@@ -29,20 +32,20 @@ const defaultCapacity = Number.MAX_SAFE_INTEGER;
     }]
   }
 */
-module.exports = ({request}) => {
+module.exports = ({request, routes}) => {
   const channels = [];
 
-  if (!request) {
+  if (!request && !routes) {
     return {channels};
   }
 
-  const {routes} = parsePaymentRequest({request});
+  const hints = !!routes ? routes : parsePaymentRequest({request}).routes;
 
-  if (!routes || !routes.length) {
+  if (!hints || !hints.length) {
     return {channels};
   }
 
-  routes.forEach(route => {
+  hints.forEach(route => {
     return route.forEach((hop, i) => {
       // Skip the first hop which is just an anchor
       if (!i) {

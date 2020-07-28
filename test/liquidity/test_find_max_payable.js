@@ -1,6 +1,6 @@
 const {test} = require('@alexbosworth/tap');
 
-const findMaxPayable = require('./../../routing/find_max_payable');
+const findMaxPayable = require('./../../liquidity/find_max_payable');
 const {getInfoResponse} = require('./../fixtures');
 
 const getInfoRes = () => JSON.parse(JSON.stringify(getInfoResponse));
@@ -155,16 +155,67 @@ const tests = [
     description: 'Get maximum finds rough maximum',
     error: [503, 'GetWalletInfoErr', {err: 'err'}],
   },
+  {
+    args: {
+      cltv: 1,
+      delay: 1,
+      hops: [{channel: '0x0x0', public_key: 'a'}],
+      emitter: {emit: () => {}},
+      lnd: {
+        default: {
+          getChanInfo: ({channel}, cbk) => cbk(null, {
+            capacity: '1',
+            chan_point: '1:1',
+            channel_id: 1,
+            node1_policy: {
+              disabled: false,
+              fee_base_msat: '1',
+              fee_rate_milli_msat: '1',
+              last_update: 1,
+              max_htlc_msat: (21e8).toString(),
+              min_htlc: '1',
+              time_lock_delta: 1,
+            },
+            node1_pub: 'a',
+            node2_policy: {
+              disabled: false,
+              fee_base_msat: '2',
+              fee_rate_milli_msat: '2',
+              last_update: 2,
+              max_htlc_msat: (21e8).toString(),
+              min_htlc: '2',
+              time_lock_delta: 2,
+            },
+            node2_pub: 'b',
+          }),
+          getInfo: ({}, cbk) => cbk(null, getInfoRes()),
+        },
+        router: {
+          buildRoute: ({}, cbk) => cbk('err'),
+          sendToRoute: ({}, cbk) => cbk(null, {
+            failure: {code: 'TEMPORARY_CHANNEL_FAILURE'},
+          }),
+        },
+      },
+      max: 1e6,
+    },
+    description: 'Get maximum fails to find any route',
+    expected: {},
+  },
 ];
 
 tests.forEach(({args, description, error, expected}) => {
   return test(description, async ({end, equal, rejects}) => {
     if (!!error) {
       await rejects(findMaxPayable(args), error, 'Got expected error');
-    } else {
+    } else if (expected.maximum) {
       const {maximum} = await findMaxPayable(args);
 
       equal(maximum > expected.maximum - 10000, true, 'Got expected maximum');
+    } else {
+      const {maximum} = await findMaxPayable(args);
+
+      equal(maximum, Number(), 'Max payable is zero');
     }
 
     return end();

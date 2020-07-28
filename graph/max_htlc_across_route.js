@@ -6,6 +6,7 @@ const maxPossible = Number.MAX_SAFE_INTEGER;
 
   {
     channels: [{
+      capacity: <Capacity Tokens Number>
       destination: <Next Hop Public Key Hex String>
       policies: [{
         max_htlc_mtokens: <Maximum HTLC Millitokens String>
@@ -25,6 +26,10 @@ module.exports = ({channels}) => {
   const smallestMaxHtlcMtokens = channels
     .map(({destination, policies}) => {
       const [policy] = policies.filter(n => n.public_key !== destination);
+
+      if (!policy.max_htlc_mtokens) {
+        return BigInt(policy.capacity || maxPossible);
+      }
 
       return BigInt(policy.max_htlc_mtokens);
     })
