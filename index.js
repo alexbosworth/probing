@@ -1,4 +1,11 @@
+const {getSyntheticOutIgnores} = require('./liquidity');
 const {subscribeToFindMaxPayable} = require('./liquidity');
+const {subscribeToMultiPathPay} = require('./payments');
 const {subscribeToMultiPathProbe} = require('./liquidity');
 
-module.exports = {subscribeToFindMaxPayable, subscribeToMultiPathProbe};
+module.exports = {
+  getSyntheticOutIgnores,
+  subscribeToFindMaxPayable,
+  subscribeToMultiPathPay,
+  subscribeToMultiPathProbe,
+};

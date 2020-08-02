@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {getChannels} = require('ln-service');
 const {getRouteThroughHops} = require('ln-service');
 const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
@@ -37,27 +38,29 @@ const {isArray} = Array;
 
   @returns via cbk or Promise
   {
-    fee: <Total Fee Tokens To Pay Number>
-    fee_mtokens: <Total Fee Millitokens To Pay String>
-    hops: [{
-      channel: <Standard Format Channel Id String>
-      channel_capacity: <Channel Capacity Tokens Number>
-      fee: <Fee Number>
-      fee_mtokens: <Fee Millitokens String>
-      forward: <Forward Tokens Number>
-      forward_mtokens: <Forward Millitokens String>
-      public_key: <Public Key Hex String>
-      timeout: <Timeout Block Height Number>
-    }]
-    [messages]: [{
-      type: <Message Type Number String>
-      value: <Message Raw Value Hex Encoded String>
-    }]
-    mtokens: <Total Millitokens To Pay String>
-    [payment]: <Payment Identifier Hex String>
-    timeout: <Expiration Block Height Number>
-    tokens: <Total Tokens To Pay Number>
-    [total_mtokens]: <Total Millitokens String>
+    route: {
+      fee: <Total Fee Tokens To Pay Number>
+      fee_mtokens: <Total Fee Millitokens To Pay String>
+      hops: [{
+        channel: <Standard Format Channel Id String>
+        channel_capacity: <Channel Capacity Tokens Number>
+        fee: <Fee Number>
+        fee_mtokens: <Fee Millitokens String>
+        forward: <Forward Tokens Number>
+        forward_mtokens: <Forward Millitokens String>
+        public_key: <Public Key Hex String>
+        timeout: <Timeout Block Height Number>
+      }]
+      [messages]: [{
+        type: <Message Type Number String>
+        value: <Message Raw Value Hex Encoded String>
+      }]
+      mtokens: <Total Millitokens To Pay String>
+      [payment]: <Payment Identifier Hex String>
+      timeout: <Expiration Block Height Number>
+      tokens: <Total Tokens To Pay Number>
+      [total_mtokens]: <Total Millitokens String>
+    }
   }
 */
 module.exports = (args, cbk) => {
@@ -104,30 +107,22 @@ module.exports = (args, cbk) => {
         return cbk();
       },
 
-      // Calculate hop from paths
-      hops: ['validate', ({}, cbk) => {
-        const hops = args.path.channels.map((channel, i) => {
-          return {channel, public_key: args.path.relays[i]};
-        });
-
-        return cbk(null, hops);
-      }],
-
-      // Get the channels associated with the payment
-      getChannels: ['hops', ({hops}, cbk) => {
-        const {channels} = channelsFromHints({routes: args.routes});
-
-        return getPoliciesForChannels({channels, hops, lnd: args.lnd}, cbk);
-      }],
-
       // Build a route from the channels
-      getRoute: ['getChannels', ({getChannels}, cbk) => {
+      getRoute: ['validate', ({}, cbk) => {
+        // Exit early when hop hint routes are specified
+        if (!!args.routes) {
+          return cbk();
+        }
+
+        const [channel] = args.path.channels;
+
         return getRouteThroughHops({
           cltv_delta: args.cltv_delta,
           lnd: args.lnd,
           mtokens: args.mtokens,
+          outgoing_channel: channel,
           payment: args.payment,
-          public_keys: getChannels.channels.map(n => n.destination),
+          public_keys: args.path.relays,
           total_mtokens: args.total_mtokens,
         },
         (err, res) => {
@@ -140,6 +135,49 @@ module.exports = (args, cbk) => {
         });
       }],
 
+      // Get the current liquidity for the outgoing relaying peer
+      getLiquidity: ['getRoute', ({getRoute}, cbk) => {
+        // Exit early when getting a route worked
+        if (!!getRoute) {
+          return cbk();
+        }
+
+        const [partnerPublicKey] = args.path.relays;
+
+        return getChannels({
+          is_active: true,
+          lnd: args.lnd,
+          partner_public_key: partnerPublicKey,
+        },
+        cbk);
+      }],
+
+      // Calculate the hops from paths
+      hops: ['getLiquidity', 'getRoute', ({getLiquidity, getRoute}, cbk) => {
+        // Exit early when a route has been calculated by LND
+        if (!!getRoute) {
+          return cbk();
+        }
+
+        const hops = args.path.channels.map((channel, i) => {
+          return {channel, public_key: args.path.relays[i]};
+        });
+
+        return cbk(null, hops);
+      }],
+
+      // Get the channel policy data associated with the payment
+      getChannels: ['getRoute', 'hops', ({getRoute, hops}, cbk) => {
+        // Exit early when a route has been calculated by LND
+        if (!!getRoute) {
+          return cbk();
+        }
+
+        const {channels} = channelsFromHints({routes: args.routes});
+
+        return getPoliciesForChannels({channels, hops, lnd: args.lnd}, cbk);
+      }],
+
       // Get current height as needed for route calculation
       getHeight: ['getRoute', ({getRoute}, cbk) => {
         // Exit early when a route has been calculated by LND
@@ -150,7 +188,7 @@ module.exports = (args, cbk) => {
         return getWalletInfo({lnd: args.lnd}, cbk);
       }],
 
-      // Assemble route to pay along
+      // Fallback to directly assembling route to pay along
       route: [
         'getChannels',
         'getHeight',
@@ -159,7 +197,7 @@ module.exports = (args, cbk) => {
       {
         // Exit early when a route has been calculated by LND
         if (!!getRoute) {
-          return cbk(null, getRoute);
+          return cbk(null, {route: getRoute});
         }
 
         // Derive the route locally
@@ -173,7 +211,7 @@ module.exports = (args, cbk) => {
           total_mtokens: args.total_mtokens,
         });
 
-        return cbk(null, route);
+        return cbk(null, {route});
       }],
     },
     returnResult({reject, resolve, of: 'route'}, cbk));

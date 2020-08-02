@@ -1,6 +1,7 @@
 const EventEmitter = require('events');
 
 const asyncMap = require('async/map');
+const asyncRetry = require('async/retry');
 const asyncWhilst = require('async/whilst');
 const {subscribeToPayViaRoutes} = require('ln-service');
 
@@ -10,7 +11,13 @@ const sortMultiplePaymentPaths = require('./sort_multiple_payment_paths');
 
 const defaultCltvDelta = 144;
 const {isArray} = Array;
+const isMppTimeout = n => n.reason === 'MppTimeout';
+const isRejected = n => n.reason === 'UnknownPaymentHash';
+const maxAttempts = 10;
+const millitokensAsTokens = n => Number(BigInt(n) / BigInt(1e3));
 const {nextTick} = process;
+const sumMtokens = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
+const sumTokens = arr => arr.reduce((sum, n) => sum + n, Number());
 const tokensAsMillitokens = tokens => BigInt(tokens) * BigInt(1e3);
 
 /** Subscribe to a payment over multiple paths
@@ -20,6 +27,7 @@ const tokensAsMillitokens = tokens => BigInt(tokens) * BigInt(1e3);
     destination: <Destination Public Key Hex String>
     id: <Payment Hash Hex String>
     lnd: <Authenticated LND API Object>
+    [max_attempts]: <Maximum Routing Failure Retries Number>
     max_fee: <Maximum Total Fee Tokens>
     [max_timeout]: <Maximum Payment Expiration Height Number>
     mtokens: <Total Millitokens to Send String>
@@ -162,7 +170,44 @@ const tokensAsMillitokens = tokens => BigInt(tokens) * BigInt(1e3);
   }
 
   @event 'success'
-  {}
+  {
+    routes: [{
+      fee: <Fee Paid Tokens Number>
+      fee_mtokens: <Fee Paid Millitokens String>
+      hops: [{
+        channel: <Standard Format Channel Id String>
+        channel_capacity: <Hop Channel Capacity Tokens Number>
+        fee_mtokens: <Hop Forward Fee Millitokens String>
+        forward_mtokens: <Hop Forwarded Millitokens String>
+        timeout: <Hop CLTV Expiry Block Height Number>
+      }]
+      id: <Payment Hash Hex String>
+      is_confirmed: <Is Confirmed Bool>
+      is_outgoing: <Is Outoing Bool>
+      mtokens: <Total Millitokens Sent String>
+      route: {
+        fee: <Total Fee Tokens To Pay Number>
+        fee_mtokens: <Total Fee Millitokens To Pay String>
+        hops: [{
+          channel: <Standard Format Channel Id String>
+          channel_capacity: <Channel Capacity Tokens Number>
+          fee: <Fee Number>
+          fee_mtokens: <Fee Millitokens String>
+          forward: <Forward Tokens Number>
+          forward_mtokens: <Forward Millitokens String>
+          public_key: <Public Key Hex String>
+          timeout: <Timeout Block Height Number>
+        }]
+        mtokens: <Total Millitokens To Pay String>
+        timeout: <Expiration Block Height Number>
+        tokens: <Total Tokens To Pay Number>
+      }
+      safe_fee: <Payment Forwarding Fee Rounded Up Tokens Number>
+      safe_tokens: <Payment Tokens Rounded Up Number>
+      secret: <Payment Secret Preimage Hex String>
+      tokens: <Total Tokens Sent Number>
+    }]
+  }
 */
 module.exports = args => {
   if (!args.destination) {
@@ -193,33 +238,30 @@ module.exports = args => {
     throw [400, 'ExpectedPaymentIdentifierToSubscribeToMultiPathPayment'];
   }
 
-  const {sorted} = sortMultiplePaymentPaths({paths: args.paths});
-
   const emitter = new EventEmitter();
-  const failed = [];
-  const fees = [];
-  const paid = [];
-  const paying = [];
+  const failures = [];
+  const ignore = [];
+  const {sorted} = sortMultiplePaymentPaths({paths: args.paths});
+  const times = args.max_attempts !== undefined ? args.max_attempts : maxAttempts;
 
-  asyncMap(sorted, (path, cbk) => {
-    const pathFailures = []
+  const paths = sorted.map((path, index) => ({index, path}));
 
-    // Try to execute this path until the payment is completed or fails
-    return asyncWhilst(
-      cbk => {
-        // Exit the loop when we have a paid result
-        if (!!paid.length) {
-          return cbk(null, false);
-        }
+  nextTick(() => {
+    return asyncRetry({times}, cbk => {
+      const attemptFailures = [];
+      const failed = [];
+      const fees = [];
+      const paid = [];
+      const paying = [];
+      const toPay = paths.filter(path => !ignore.includes(path.index));
 
-        // Exit the loop when we have a routing failure on the path
-        if (!!pathFailures.length) {
-          return cbk(null, false);
-        }
+      const maximum = sumTokens(toPay.map(n => n.path.liquidity));
 
-        return cbk(null, true);
-      },
-      cbk => {
+      if (BigInt(args.mtokens) > tokensAsMillitokens(maximum)) {
+        return cbk([400, 'ExceededMaximumPathsLiquidity', {maximum}]);
+      }
+
+      return asyncMap(toPay, ({index, path}, cbk) => {
         // Calculate how many mtokens should be used on this path
         const {mtokens} = mtokensForMultiPathPayment({
           paying,
@@ -230,7 +272,7 @@ module.exports = args => {
 
         // Exit early when there is no more in-flight liquidity needed
         if (!mtokens) {
-          return nextTick(cbk);
+          return cbk();
         }
 
         // Identify sent payments by their array index
@@ -243,6 +285,7 @@ module.exports = args => {
 
         // Calculate the route for this path
         return getRouteForPayment({
+          failures,
           mtokens,
           path,
           cltv_delta: args.cltv_delta || defaultCltvDelta,
@@ -258,13 +301,13 @@ module.exports = args => {
             return cbk(err);
           }
 
-          const {timeout} = res;
+          const {timeout} = res.route;
 
           if (!!args.max_timeout && timeout > args.max_timeout) {
             return cbk([503, 'ExceededMaxCltvLimit', {timeout}]);
           }
 
-          fees.push({id, fee_mtokens: res.fee_mtokens});
+          fees.push({id, fee_mtokens: res.route.fee_mtokens});
 
           // Recalculate required total fee millitokens
           const required = fees
@@ -275,14 +318,27 @@ module.exports = args => {
 
           // Check that required fees would not exceed the maximum fee amount
           if (BigInt(required) > tokensAsMillitokens(args.max_fee)) {
-            return cbk([503, 'ExceededMaxFeeLimit', {required}]);
+            const needed = millitokensAsTokens(required);
+
+            return cbk([503, 'ExceededMaxFeeLimit', {required_fee: needed}]);
           }
 
           // Put the payment into flight
           const sub = subscribeToPayViaRoutes({
             id: args.id,
             lnd: args.lnd,
-            routes: [res],
+            routes: [res.route],
+          });
+
+          sub.on('error', err => {
+            failed.push(payment);
+
+            return cbk();
+          });
+
+          // Continue when the payment failed
+          sub.on('failure', () => {
+            return cbk();
           });
 
           // Announce that a route is going out
@@ -290,13 +346,30 @@ module.exports = args => {
 
           // The route ended in a failure
           sub.on('routing_failure', failure => {
-            // Record failure of the payment
-            [failed, pathFailures].forEach(n => n.push(payment));
+            attemptFailures.push(failure);
+
+            // Exit early when the overall payment entered terminal condition
+            if (failure.reason === 'MppTimeout') {
+              return;
+            }
+
+            // Exit early when the payment is rejected
+            if (failure.reason === 'UnknownPaymentHash') {
+              return;
+            }
+
+            ignore.push(index);
+
+            // Record specific routing failure details
+            failures.push(failure);
+
+            // Record failure of this path
+            failed.push(payment);
 
             // Notify listeners that a path failed
-            emitter.emit('routing_failure', {failure});
+            emitter.emit('routing_failure', failure);
 
-            return cbk();
+            return;
           });
 
           // The route ended in a success
@@ -319,25 +392,45 @@ module.exports = args => {
         });
       },
       (err, res) => {
-        nextTick(() => cbk(err, res));
+        // Exit early with error when there was a Multi-Path Timeout
+        if (!!attemptFailures.find(n => isMppTimeout(n))) {
+          return cbk([503, 'MultiPathPaymentTimeoutFailure']);
+        }
+
+        // Exit early when there was an end rejection
+        if (!!attemptFailures.find(n => isRejected(n))) {
+          return cbk([503, 'PaymentRejectedByDestination']);
+        }
+
+        const routingFails = attemptFailures.filter(n => !isMppTimeout(n));
+
+        // Exit with error when all the shards failed to reach the end
+        if (routingFails.length === paying.length) {
+          return cbk([503, 'RoutingFailureAttemptingMultiPathPayment']);
+        }
+
+        return cbk(err, res);
+      });
+    },
+    (err, res) => {
+      // Exit early when there is an error but no listeners for errors
+      if (!!err && !emitter.listenerCount('error')) {
+        return;
       }
-    )
-  },
-  (err, res) => {
-    if (!!err && !emitter.listenerCount('error')) {
-      return;
-    }
 
-    if (!!err) {
-      return emitter.emit('error', err);
-    }
+      if (!!err) {
+        return emitter.emit('error', err);
+      }
 
-    // Exit early with failure when there are no successful payment paths
-    if (!paid.length) {
-      return emitter.emit('failure', {});
-    }
+      const routes = res.filter(n => !!n);
 
-    return emitter.emit('success', {});
+      // Exit early with failure when there are no successful payment paths
+      if (!routes.length) {
+        return emitter.emit('failure', {});
+      }
+
+      return emitter.emit('success', {routes});
+    });
   });
 
   return emitter;

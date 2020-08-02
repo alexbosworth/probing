@@ -4,6 +4,7 @@ const asyncAuto = require('async/auto');
 const {getChannels} = require('ln-service');
 const {subscribeToProbeForRoute} = require('ln-service');
 
+const hopsForFindMaxPath = require('./hops_for_find_max_path');
 const multiProbeIgnores = require('./multi_probe_ignores');
 const subscribeToFindMaxPayable = require('./subscribe_to_find_max_payable');
 
@@ -34,7 +35,9 @@ const {nextTick} = process;
     [path_timeout_ms]: <Skip Individual Path Attempt After Milliseconds Number>
     [probe_timeout_ms]: <Fail Entire Probe After Milliseconds Number>
     probes: [{
-      [relays]: [<Public Key Hex String>]
+      channels: [<Channel Id String>]
+      liquidity: <Liquidity On Path Tokens Number>
+      relays: [<Public Key Hex String>]
     }]
     public_key: <Source Public Key Hex String>
     [routes]: [[{
@@ -205,6 +208,10 @@ module.exports = args => {
     throw [400, 'ExpectedRecordOfProbesToFindMultiProbePath'];
   }
 
+  if (args.probes.map(n => !!n).length !== args.probes.length) {
+    throw [400, 'ExpectedArrayOfProbeDetailsToFindMultiProbePath'];
+  }
+
   if (!args.public_key) {
     throw [400, 'ExpectedSourcePublicKeyToFindMultiProbePath'];
   }
@@ -254,8 +261,10 @@ module.exports = args => {
         routes: args.routes,
       });
 
+      // Probing for route found no result
       sub.on('end', () => cbk());
 
+      // Probing for route hit an error
       sub.on('error', err => {
         sub.removeAllListeners();
 
@@ -265,6 +274,8 @@ module.exports = args => {
       // A route was found
       sub.on('probe_success', ({route}) => {
         sub.removeAllListeners();
+
+        emit('routing_success', ({route}));
 
         return cbk(null, route);
       });
@@ -282,27 +293,39 @@ module.exports = args => {
         return cbk(null, {});
       }
 
-      emit('routing_success', ({route: probe}));
+      const {hops, max} = hopsForFindMaxPath({
+        channels: getChannels.channels,
+        hops: probe.hops,
+        probes: args.probes.map(n => n.channels),
+      });
 
-      // Search to find maximum liquidity
+      if (!hops) {
+        return cbk(null, {});
+      }
+
+      // Search to find maximum liquidity on the path
       const sub = subscribeToFindMaxPayable({
+        hops,
+        max,
         cltv: args.cltv_delta,
         delay: args.evaluation_delay_ms,
-        hops: probe.hops,
         lnd: args.lnd,
-        max: max(...getChannels.channels.map(n => n.local_balance)),
         request: args.request,
       });
 
       sub.on('error', err => cbk(err));
       sub.on('evaluating', ({tokens}) => emit('evaluating', {tokens}));
       sub.on('failure', () => cbk(null, {}));
-      sub.on('success', ({maximum, route}) => cbk(null, {maximum, route}));
+
+      sub.on('success', ({maximum, route}) => {
+        return cbk(null, {hops, maximum, route});
+      });
 
       return;
     }],
   },
   (err, res) => {
+    // Exit early when there are no error listeners
     if (!!err && !emitter.listenerCount('error')) {
       return;
     }
@@ -311,12 +334,13 @@ module.exports = args => {
       return emit('error', err);
     }
 
+    // Exit with failure when there was no maximum found for a route
     if (!res.getLiquidity.maximum) {
       return emit('failure', {});
     }
 
     return emit('success', {
-      channels: res.probe.hops.map(n => n.channel),
+      channels: res.getLiquidity.hops.map(n => n.channel),
       fee: res.getLiquidity.route.fee,
       fee_mtokens: res.getLiquidity.route.fee_mtokens,
       liquidity: res.getLiquidity.maximum,

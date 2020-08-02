@@ -57,6 +57,15 @@ const {nextTick} = process;
   @event 'failure'
   {}
 
+  @event 'path'
+  {
+    channels: [<Standard Format Channel Id String>]
+    fee: <Fee Amount Tokens>
+    fee_mtokens: <Fee Amount Millitokens String>
+    liquidity: <Liquidity Total Tokens>
+    relays: [<Relaying Node Public Key Hex String>]
+  }
+
   @event 'probing'
   {
     route: {
@@ -249,7 +258,7 @@ module.exports = args => {
           sub.on('error', err => cbk(err));
           sub.on('evaluating', ({tokens}) => emit('evaluating', {tokens}));
 
-          // Record pathfinding failure
+          // A probe failed
           sub.on('failure', failure => {
             failures.push(failure);
 
@@ -263,8 +272,10 @@ module.exports = args => {
             return emit('routing_success', ({route}));
           });
 
-          // Record found path
+          // A path was found
           sub.on('success', path => {
+            emit('path', path);
+
             paths.push({
               channels: path.channels,
               fee: path.fee,

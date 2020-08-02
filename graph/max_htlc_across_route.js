@@ -1,6 +1,7 @@
 const asTokens = millitokens => Number(millitokens / BigInt(1e3));
 const isSmaller = (a, b) => BigInt(a) < BigInt(b);
 const maxPossible = Number.MAX_SAFE_INTEGER;
+const tokensAsMillitokens = tokens => BigInt(tokens) * BigInt(1e3);
 
 /** Given a set of channels representing a route, return max HTLC size
 
@@ -24,11 +25,11 @@ const maxPossible = Number.MAX_SAFE_INTEGER;
 module.exports = ({channels}) => {
   // The maximum HTLC size is equal to the smallest max htlc mtokens
   const smallestMaxHtlcMtokens = channels
-    .map(({destination, policies}) => {
+    .map(({capacity, destination, policies}) => {
       const [policy] = policies.filter(n => n.public_key !== destination);
 
       if (!policy.max_htlc_mtokens) {
-        return BigInt(policy.capacity || maxPossible);
+        return tokensAsMillitokens(capacity || maxPossible);
       }
 
       return BigInt(policy.max_htlc_mtokens);

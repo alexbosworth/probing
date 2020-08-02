@@ -1,4 +1,4 @@
-const {test} = require('@alexbosworth/tap');
+const {test} = require('tap');
 
 const findMaxPayable = require('./../../liquidity/find_max_payable');
 const {getInfoResponse} = require('./../fixtures');
@@ -211,7 +211,7 @@ tests.forEach(({args, description, error, expected}) => {
     } else if (expected.maximum) {
       const {maximum} = await findMaxPayable(args);
 
-      equal(maximum > expected.maximum - 10000, true, 'Got expected maximum');
+      equal(maximum > expected.maximum - 100000, true, 'Got expected maximum');
     } else {
       const {maximum} = await findMaxPayable(args);
 

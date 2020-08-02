@@ -11,11 +11,11 @@
     "asyncjs-util": "1.2.3",
     "bolt07": "1.5.2",
     "invoices": "1.1.1",
-    "ln-service": "49.4.1"
+    "ln-service": "49.4.2"
   },
   "description": "Lightning Network probing utilities",
   "devDependencies": {
-    "@alexbosworth/tap": "14.10.9"
+    "tap": "14.10.8"
   },
   "engines": {
     "node": ">=10.12.0"
@@ -35,5 +35,5 @@
   "scripts": {
     "test": "tap test/graph/*.js test/liquidity/*.js test/payments/*.js test/routing/*.js"
   },
-  "version": "1.1.0"
+  "version": "1.2.0"
 }

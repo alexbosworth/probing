@@ -1,4 +1,4 @@
-const {test} = require('@alexbosworth/tap');
+const {test} = require('tap');
 
 const {getChanInfoResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
@@ -11,6 +11,7 @@ const makeLnd = overrides => {
     default: {
       getChanInfo: ({}, cbk) => cbk(null, getChanInfoResponse),
       getInfo: ({}, cbk) => cbk(null, getInfoRes()),
+      listChannels: ({}, cbk) => cbk(null, {channels: []}),
     },
     router: {
       buildRoute: ({}, cbk) => cbk('err'),
@@ -62,7 +63,7 @@ const makeExpected = overrides => {
 
   Object.keys(overrides).forEach(key => expected[key] = overrides[key]);
 
-  return expected;
+  return {route: expected};
 };
 
 const tests = [
@@ -114,6 +115,11 @@ const tests = [
   {
     args: makeArgs({}),
     description: 'A route is returned for the payment',
+    expected: makeExpected({}),
+  },
+  {
+    args: makeArgs({routes: []}),
+    description: 'A route with hop hints is returned for the payment',
     expected: makeExpected({}),
   },
   {

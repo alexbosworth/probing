@@ -10,13 +10,13 @@ const {getPoliciesForChannels} = require('./../graph');
 const {isRoutePayable} = require('./../routing');
 const {maxHtlcAcrossRoute} = require('./../graph');
 
-const accuracy = 10000;
+const accuracy = 50000;
 const defaultAttemptDelayMs = 1000 * 1;
 const {isArray} = Array;
 const from = 1;
 const {min} = Math;
 const nextAttemptDelayMs = 1000 * 1;
-const to = tokens => Math.max(2, tokens - Math.round(Math.random() * 1000));
+const to = tokens => Math.max(2, tokens - Math.round(Math.random() * 20000));
 
 /** Find max routable
 

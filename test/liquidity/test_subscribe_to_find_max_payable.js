@@ -1,7 +1,7 @@
 const {once} = require('events');
 const {promisify} = require('util');
 
-const {test} = require('@alexbosworth/tap');
+const {test} = require('tap');
 
 const {getChanInfoResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');

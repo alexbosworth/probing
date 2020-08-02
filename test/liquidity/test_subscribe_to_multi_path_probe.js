@@ -1,7 +1,7 @@
 const {once} = require('events');
 const {promisify} = require('util');
 
-const {test} = require('@alexbosworth/tap');
+const {test} = require('tap');
 
 const {getChanInfoResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
@@ -37,7 +37,7 @@ const makeLndDefault = overrides => {
         min_htlc: '2',
         time_lock_delta: 2,
       },
-      node2_pub: 'b',
+      node2_pub: '00',
     }),
     getInfo: ({}, cbk) => cbk(null, getInfoRes()),
     listChannels: ({}, cbk) => cbk(null, {channels: []}),
@@ -145,7 +145,7 @@ const tests = [
               min_htlc: '2',
               time_lock_delta: 2,
             },
-            node2_pub: 'b',
+            node2_pub: '00',
           }),
           getInfo: ({}, cbk) => cbk(null, getInfoRes()),
           listChannels: ({}, cbk) => cbk(null, {
@@ -171,7 +171,7 @@ const tests = [
               private: true,
               remote_balance: 1,
               remote_chan_reserve_sat: '1',
-              remote_pubkey: 'b',
+              remote_pubkey: '00',
               total_satoshis_received: 1,
               total_satoshis_sent: 1,
               unsettled_balance: 1,
@@ -274,7 +274,7 @@ const tests = [
           event: 'routing_success',
         },
         {
-          data: {tokens: 10000},
+          data: {tokens: 50000},
           event: 'evaluating',
         },
         {
@@ -283,7 +283,7 @@ const tests = [
               channels: ['0x0x1'],
               fee: 0,
               fee_mtokens: '0',
-              liquidity: 10001,
+              liquidity: 50001,
               relays: ['00'],
             }],
           },
