@@ -1,6 +1,6 @@
 # Versions
 
-## Version 1.2.0
+## Version 1.2.1
 
 - `getSyntheticOutIgnores`: Add method to generate out restriction ignores
 - `subscribeToMultiPathPay`: Add method to make a payment over multiple paths

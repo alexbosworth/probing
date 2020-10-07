@@ -9,9 +9,9 @@
   "dependencies": {
     "async": "3.2.0",
     "asyncjs-util": "1.2.3",
-    "bolt07": "1.5.2",
-    "invoices": "1.1.1",
-    "ln-service": "49.4.2"
+    "bolt07": "1.6.0",
+    "invoices": "1.1.4",
+    "ln-service": "49.14.0"
   },
   "description": "Lightning Network probing utilities",
   "devDependencies": {
@@ -35,5 +35,5 @@
   "scripts": {
     "test": "tap test/graph/*.js test/liquidity/*.js test/payments/*.js test/routing/*.js"
   },
-  "version": "1.2.0"
+  "version": "1.2.1"
 }
