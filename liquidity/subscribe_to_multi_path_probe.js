@@ -14,6 +14,10 @@ const {nextTick} = process;
   This method is not supported on versions below LND 0.10.0
 
   {
+    [allow_stacking]: [{
+      from_public_key: <Allow Path Stacking From Public Key Hex String>
+      to_public_key: <Allow Path Stacking To Public Key Hex String>
+    }]
     cltv_delta: <Final CLTV Delta Number>
     [destination]: <Destination Public Key Hex String>
     [features]: [{
@@ -237,6 +241,7 @@ module.exports = args => {
         },
         cbk => {
           const sub = subscribeToFindPath({
+            allow_stacking: args.allow_stacking,
             cltv_delta: args.cltv_delta,
             destination: args.destination,
             evaluation_delay_ms: args.evaluation_delay_ms,

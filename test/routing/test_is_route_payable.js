@@ -58,6 +58,101 @@ const tests = [
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
           sendToRoute: ({}, cbk) => cbk(null, {
+            failure: {code: 'INCORRECT_CLTV_EXPIRY'},
+          },
+        )},
+      },
+      tokens: 1,
+    },
+    description: 'An incorrect CLTV is not expected',
+    error: [503, 'UnexpectedErrorCode'],
+  },
+  {
+    args: {
+      channels: [{
+        capacity: 1,
+        destination: 'b',
+        id: '0x0x0',
+        policies: [
+          {
+            base_fee_mtokens: '1',
+            cltv_delta: 1,
+            fee_rate: 1,
+            is_disabled: false,
+            min_htlc_mtokens: '1',
+            public_key: 'a',
+          },
+          {
+            base_fee_mtokens: '2',
+            cltv_delta: 2,
+            fee_rate: 2,
+            is_disabled: false,
+            min_htlc_mtokens: '2',
+            public_key: 'b',
+          },
+        ],
+      }],
+      cltv: 1,
+      lnd: {
+        default: {getInfo: ({}, cbk) => cbk(null, getInfoRes())},
+        router: {
+          buildRoute: ({}, cbk) => cbk(null, {
+            route: {
+              hops: [{
+                amt_to_forward_msat: '1',
+                chan_capacity: '1',
+                chan_id: '1',
+                expiry: 1,
+                fee_msat: '1',
+                pub_key: 'b',
+              }],
+              total_amt: 1,
+              total_amt_msat: '1',
+              total_fees: '1',
+              total_fees_msat: '1',
+              total_time_lock: 1,
+            },
+          }),
+          sendToRoute: ({}, cbk) => setTimeout(() => cbk('err'), 10),
+        },
+      },
+      timeout: 1,
+      tokens: 1,
+    },
+    description: 'Errors means payment is not possible',
+    expected: {is_payable: false},
+  },
+  {
+    args: {
+      channels: [{
+        capacity: 1,
+        destination: 'b',
+        id: '0x0x0',
+        policies: [
+          {
+            base_fee_mtokens: '1',
+            cltv_delta: 1,
+            fee_rate: 1,
+            is_disabled: false,
+            min_htlc_mtokens: '1',
+            public_key: 'a',
+          },
+          {
+            base_fee_mtokens: '2',
+            cltv_delta: 2,
+            fee_rate: 2,
+            is_disabled: false,
+            min_htlc_mtokens: '2',
+            public_key: 'b',
+          },
+        ],
+      }],
+      cltv: 1,
+      lnd: {
+        default: {getInfo: ({}, cbk) => cbk(null, getInfoRes())},
+        router: {
+          buildRoute: ({}, cbk) => cbk('err'),
+          sendToRoute: ({}, cbk) => cbk(null, {
             failure: {code: 'UNKNOWN_PAYMENT_HASH'},
           },
         )},

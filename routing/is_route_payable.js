@@ -11,7 +11,7 @@ const invalidPaymentMessage = 'UnknownPaymentHash';
 const {isArray} = Array;
 const mtokensFromTokens = tokens => (BigInt(tokens) * BigInt(1e3)).toString();
 const pathfindingTimeoutMs = 1000 * 60 * 5;
-const payWithTimeout = asyncTimeout(payViaRoutes, 1000 * 60 * 5);
+const payWithTimeout = timeout => asyncTimeout(payViaRoutes, timeout);
 
 /** Find out if route is payable
 
@@ -32,6 +32,7 @@ const payWithTimeout = asyncTimeout(payViaRoutes, 1000 * 60 * 5);
     cltv: <Final CLTV Delta Number>
     lnd: <Authenticated LND API Object>
     [mtokens]: <Payable Millitokens String>
+    timeout: <Path Attempt Timeout Milliseconds Number>
     [tokens]: <Payable Tokens Number>
   }
 
@@ -65,7 +66,7 @@ const payWithTimeout = asyncTimeout(payViaRoutes, 1000 * 60 * 5);
     }
   }
 */
-module.exports = ({channels, cltv, lnd, mtokens, tokens}, cbk) => {
+module.exports = ({channels, cltv, lnd, mtokens, timeout, tokens}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -127,7 +128,7 @@ module.exports = ({channels, cltv, lnd, mtokens, tokens}, cbk) => {
 
       // Attempt the route
       attempt: ['getRoute', 'route', ({getRoute, route}, cbk) => {
-        return payWithTimeout({
+        return payWithTimeout(timeout || pathfindingTimeoutMs)({
           lnd,
           pathfinding_timeout: pathfindingTimeoutMs,
           routes: [getRoute || route],

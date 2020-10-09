@@ -1,5 +1,9 @@
 # Versions
 
+## Version 1.3.0
+
+- `subscribeToMultiPathProbe`: Add `allow_stacking` to allow stacking of HTLCs on an edge
+
 ## Version 1.2.1
 
 - `getSyntheticOutIgnores`: Add method to generate out restriction ignores

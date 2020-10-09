@@ -152,7 +152,7 @@ const tests = [
       },
       max: 1e6,
     },
-    description: 'Get maximum finds rough maximum',
+    description: 'Get maximum reports back wallet info errors',
     error: [503, 'GetWalletInfoErr', {err: 'err'}],
   },
   {

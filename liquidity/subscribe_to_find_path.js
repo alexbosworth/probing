@@ -17,6 +17,10 @@ const {nextTick} = process;
 /** Subscribe to a search within a multi probe given past probes
 
   {
+    [allow_stacking]: [{
+      from_public_key: <Allow Path Stacking From Public Key Hex String>
+      to_public_key: <Allow Path Stacking To Public Key Hex String>
+    }]
     cltv_delta: <Final CLTV Delta Number>
     destination: <Destination Public Key Hex String>
     [evaluation_delay_ms]: <Evaluation Delay Milliseconds Number>
@@ -235,6 +239,7 @@ module.exports = args => {
 
       // Calculate which paths to ignore to avoid interference patterns
       const {ignore} = multiProbeIgnores({
+        anti: args.allow_stacking || [],
         channels: getChannels.channels,
         from: args.public_key,
         ignore: args.ignore || [],

@@ -15,6 +15,10 @@ const uniq = arr => Array.from(new Set(arr));
   another public key, due to lack of budget.
 
   {
+    [anti]: [{
+      from_public_key: <Allow Path Stacking From Public Key Hex String>
+      to_public_key: <Allow Path Stacking To Public Key Hex String>
+    }]
     channels: [{
       id: <Standard Format Channel Id String>
       local_balance: <Local Balance Tokens Number>
@@ -51,7 +55,7 @@ const uniq = arr => Array.from(new Set(arr));
     }]
   }
 */
-module.exports = ({channels, from, ignore, mtokens, probes, routes}) => {
+module.exports = ({anti, channels, from, ignore, mtokens, probes, routes}) => {
   if (!isArray(channels)) {
     throw new Error('ExpectedArrayofChannelsToGenerateMultiProbeIgnores');
   }
@@ -150,17 +154,17 @@ module.exports = ({channels, from, ignore, mtokens, probes, routes}) => {
     .concat(networkIgnores);
 
   // Exit early with normal ignores when there are no whitelisted hop hint hops
-  if (!routes || !routes.length) {
+  if ((!routes || !routes.length) && (!anti || !anti.length)) {
     return {ignore: normalIgnores};
   }
 
-  const [firstRoute] = routes;
+  const [firstRoute] = routes || [];
 
   // The final hop includes the destination public key
-  const [finalHop] = firstRoute.slice().reverse();  
+  const [finalHop] = (firstRoute || []).slice().reverse();
 
   // When routes are specified, never ignore them
-  const antiIgnores = flatten(routes.map(route => {
+  const antiIgnores = (anti || []).concat(flatten(routes.map(route => {
     return route.map(n => n.public_key).map((hop, i, hops) => {
       if (!i) {
         return {};
@@ -174,7 +178,7 @@ module.exports = ({channels, from, ignore, mtokens, probes, routes}) => {
         to_public_key: !!nextHop ? nextHop : finalHop.public_key,
       };
     });
-  }));
+  })));
 
   // Derive a final set of ignores to use for a path search
   const filteredIgnores = normalIgnores.filter(ignore => {
