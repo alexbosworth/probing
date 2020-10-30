@@ -1,6 +1,6 @@
 # Versions
 
-## Version 1.3.0
+## Version 1.3.1
 
 - `subscribeToMultiPathProbe`: Add `allow_stacking` to allow stacking of HTLCs on an edge
 
