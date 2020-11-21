@@ -32,6 +32,13 @@ const to = tokens => Math.max(2, tokens - Math.round(Math.random() * 20000));
     logger: <Winston Logger Object>
     max: <Max Attempt Tokens Number>
     [request]: <BOLT 11 Payment Request String>
+    [routes]: [[{
+      base_fee_mtokens: <Base Routing Fee In Millitokens Number>
+      channel: <Standard Format Channel Id String>
+      cltv_delta: <CLTV Blocks Delta Number>
+      fee_rate: <Fee Rate In Millitokens Per Million Number>
+      public_key: <Public Key Hex String>
+    }]]
   }
 
   @returns via cbk or Promise
@@ -56,7 +63,9 @@ const to = tokens => Math.max(2, tokens - Math.round(Math.random() * 20000));
     }
   }
 */
-module.exports = ({cltv, delay, emitter, hops, lnd, max, request}, cbk) => {
+module.exports = (args, cbk) => {
+  const {cltv, delay, emitter, hops, lnd, max, request, routes} = args;
+
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -94,7 +103,7 @@ module.exports = ({cltv, delay, emitter, hops, lnd, max, request}, cbk) => {
 
       // Get channels
       getChannels: ['validate', ({}, cbk) => {
-        const {channels} = channelsFromHints({request});
+        const {channels} = channelsFromHints({request, routes});
 
         return getPoliciesForChannels({channels, hops, lnd}, cbk);
       }],

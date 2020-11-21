@@ -1,5 +1,9 @@
 # Versions
 
+## Version 1.3.2
+
+- `subscribeToFindMaxPayable`: Add support for passing route hints with `routes`
+
 ## Version 1.3.1
 
 - `subscribeToMultiPathProbe`: Add `allow_stacking` to allow stacking of HTLCs on an edge

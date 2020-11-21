@@ -35,6 +35,7 @@ const defaultCapacity = Number.MAX_SAFE_INTEGER;
 module.exports = ({request, routes}) => {
   const channels = [];
 
+  // Exit early when there are no hints
   if (!request && !routes) {
     return {channels};
   }

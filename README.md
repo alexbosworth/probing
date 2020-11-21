@@ -39,6 +39,13 @@ Subscribe to a probe to find the max routable amount along a route
       lnd: <Authenticated LND API Object>
       max: <Max Attempt Tokens Number>
       [request]: <BOLT 11 Payment Request String>
+      [routes]: [[{
+        base_fee_mtokens: <Base Routing Fee In Millitokens Number>
+        channel: <Standard Format Channel Id String>
+        cltv_delta: <CLTV Blocks Delta Number>
+        fee_rate: <Fee Rate In Millitokens Per Million Number>
+        public_key: <Public Key Hex String>
+      }]]
     }
 
     @returns

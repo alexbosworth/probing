@@ -16,6 +16,13 @@ const {nextTick} = process;
     lnd: <Authenticated LND API Object>
     max: <Max Attempt Tokens Number>
     [request]: <BOLT 11 Payment Request String>
+    [routes]: [[{
+      base_fee_mtokens: <Base Routing Fee In Millitokens Number>
+      channel: <Standard Format Channel Id String>
+      cltv_delta: <CLTV Blocks Delta Number>
+      fee_rate: <Fee Rate In Millitokens Per Million Number>
+      public_key: <Public Key Hex String>
+    }]]
   }
 
   @returns
@@ -54,7 +61,7 @@ const {nextTick} = process;
     }
   }
 */
-module.exports = ({cltv, delay, hops, lnd, max, request}) => {
+module.exports = ({cltv, delay, hops, lnd, max, request, routes}) => {
   const emitter = new EventEmitter();
 
   const emit = (event, data) => emitter.emit(event, data);
@@ -68,6 +75,7 @@ module.exports = ({cltv, delay, hops, lnd, max, request}) => {
       lnd,
       max,
       request,
+      routes,
     },
     (err, res) => {
       if (!!err) {

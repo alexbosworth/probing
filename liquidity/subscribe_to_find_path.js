@@ -316,6 +316,7 @@ module.exports = args => {
         delay: args.evaluation_delay_ms,
         lnd: args.lnd,
         request: args.request,
+        routes: args.routes,
       });
 
       sub.on('error', err => cbk(err));

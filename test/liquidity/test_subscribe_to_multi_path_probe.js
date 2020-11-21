@@ -188,6 +188,7 @@ const tests = [
                 min_htlc_msat: '1',
               },
               remote_pubkey: '00',
+              thaw_height: 0,
               total_satoshis_received: 1,
               total_satoshis_sent: 1,
               unsettled_balance: 1,
