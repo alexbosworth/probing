@@ -37,6 +37,7 @@ const {nextTick} = process;
     [mtokens]: <Smallest Path Millitokens String>
     [outgoing_channel]: <Out Through Channel Id String>
     [path_timeout_ms]: <Skip Individual Path Attempt After Milliseconds Number>
+    [payment]: <Payment Identifier Hex Strimng>
     [probe_timeout_ms]: <Fail Entire Probe After Milliseconds Number>
     probes: [{
       channels: [<Channel Id String>]
@@ -51,6 +52,7 @@ const {nextTick} = process;
       [fee_rate]: <Fee Rate In Millitokens Per Million Number>
       public_key: <Forward Edge Public Key Hex String>
     }]]
+    [total_mtokens]: <Total Millitokens Across Paths String>
   }
 
   @throws
@@ -262,8 +264,10 @@ module.exports = args => {
         mtokens: args.mtokens || defaultStartingMillitokens,
         outgoing_channel: args.outgoing_channel,
         path_timeout_ms: args.path_timeout_ms,
+        payment: args.payment,
         probe_timeout_ms: args.probe_timeout_ms,
         routes: args.routes,
+        total_mtokens: args.total_mtokens,
       });
 
       // Probing for route found no result

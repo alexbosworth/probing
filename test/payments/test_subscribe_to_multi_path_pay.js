@@ -25,6 +25,7 @@ const makeLnd = overrides => {
           close_address: 'cooperative_close_address',
           commit_fee: '1',
           commit_weight: '1',
+          commitment_type: 'LEGACY',
           fee_per_kw: '1',
           initiator: true,
           local_balance: '1',
