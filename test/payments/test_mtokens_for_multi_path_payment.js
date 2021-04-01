@@ -59,13 +59,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, throws}) => {
+  return test(description, async ({end, strictSame, throws}) => {
     if (!!error) {
       throws(() => method(args), error, 'Got expected error');
     } else {
       const {sorted} = method(args);
 
-      deepIs(sorted, expected.sorted);
+      strictSame(sorted, expected.sorted);
     }
 
     return end();

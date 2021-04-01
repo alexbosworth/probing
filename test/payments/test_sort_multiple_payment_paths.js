@@ -75,19 +75,19 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, throws}) => {
+  return test(description, async ({end, strictSame, throws}) => {
     if (!!error) {
       throws(() => method(args), error, 'Got expected error');
     } else {
       const {sorted} = method(args);
 
-      deepIs(sorted, expected.sorted, 'Paths are sorted as expected');
+      strictSame(sorted, expected.sorted, 'Paths are sorted as expected');
 
       const paths = args.paths.slice().reverse();
 
       const resorted = method({paths});
 
-      deepIs(resorted.sorted, expected.sorted, 'Reversed paths still sort');
+      strictSame(resorted.sorted, expected.sorted, 'Reversed paths still sort');
     }
 
     return end();

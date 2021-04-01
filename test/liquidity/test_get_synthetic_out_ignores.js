@@ -99,13 +99,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, equal, rejects}) => {
+  return test(description, async ({end, rejects, strictSame}) => {
     if (!!error) {
       await rejects(getSyntheticOutIgnores(args), error, 'Got expected error');
     } else {
       const {ignore} = await getSyntheticOutIgnores(args);
 
-      deepIs(ignore, expected.ignore, 'Got expected ignores');
+      strictSame(ignore, expected.ignore, 'Got expected ignores');
     }
 
     return end();

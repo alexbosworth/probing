@@ -158,13 +158,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, rejects}) => {
+  return test(description, async ({end, rejects, strictSame}) => {
     if (!!error) {
       await rejects(getRouteForPayment(args), error, 'Got expected error');
     } else {
       const route = await getRouteForPayment(args);
 
-      deepIs(route, expected, 'Got expected route');
+      strictSame(route, expected, 'Got expected route');
     }
 
     return end();

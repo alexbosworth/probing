@@ -37,13 +37,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, throws}) => {
+  return test(description, async ({end, strictSame, throws}) => {
     if (!!error) {
       throws(() => findMaxPayable(args), error, 'Got expected error');
     } else {
       const {channels} = channelsFromHints(args);
 
-      deepIs(channels, expected.channels);
+      strictSame(channels, expected.channels);
     }
 
     return end();

@@ -73,13 +73,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, throws}) => {
+  return test(description, async ({end, strictSame, throws}) => {
     if (!!error) {
       throws(() => maxHtlcAcrossRoute(args), error, 'Got expected error');
     } else {
       const max = maxHtlcAcrossRoute(args);
 
-      deepIs(max, expected, 'Got expected maximum HTLC size across route');
+      strictSame(max, expected, 'Got expected maximum HTLC size across route');
     }
 
     return end();

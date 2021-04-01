@@ -445,7 +445,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, throws}) => {
+  return test(description, async ({end, strictSame, throws}) => {
     if (!!error) {
       throws(() => method(args), error, 'Got error');
     } else {
@@ -470,7 +470,7 @@ tests.forEach(({args, description, error, expected}) => {
 
       await nextTick();
 
-      deepIs(events, expected.events, 'Got expected events');
+      strictSame(events, expected.events, 'Got expected events');
     }
 
     return end();
