@@ -1,6 +1,6 @@
 # Versions
 
-## Version 1.3.5
+## Version 1.3.6
 
 - `subscribeToFindMaxPayable`: Add support for passing route hints with `routes`
 
