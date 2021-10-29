@@ -1,4 +1,4 @@
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const hopsForFindMaxPath = require('./../../liquidity/hops_for_find_max_path');
 

@@ -1,5 +1,9 @@
 # Versions
 
+## Version 2.0.0
+
+Node.js 12.0.0 or higher is now required
+
 ## Version 1.3.6
 
 - `subscribeToFindMaxPayable`: Add support for passing route hints with `routes`

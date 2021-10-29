@@ -1,7 +1,7 @@
 const {once} = require('events');
 const {promisify} = require('util');
 
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const {getChanInfoResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
@@ -14,6 +14,7 @@ const nextTick = promisify(process.nextTick);
 
 const makeLndDefault = overrides => {
   const lndDefault = {
+    deletePayment: ({}, cbk) => cbk(),
     getChanInfo: ({channel}, cbk) => cbk(null, {
       capacity: '1',
       chan_point: '1:1',
@@ -57,7 +58,7 @@ const makeLnd = overrides => {
     default: makeLndDefault({}),
     router: {
       buildRoute: ({}, cbk) => cbk('err'),
-      sendToRoute: ({}, cbk) => cbk(null, {
+      sendToRouteV2: ({}, cbk) => cbk(null, {
         failure: {code: 'UNKNOWN_PAYMENT_HASH'},
       }),
     },
@@ -101,7 +102,12 @@ const tests = [
   },
   {
     args: makeArgs({
-      lnd: makeLnd({default: {getInfo: ({}, cbk) => cbk('err')}}),
+      lnd: makeLnd({
+        default: {
+          deletePayment: ({}, cbk) => cbk(),
+          getInfo: ({}, cbk) => cbk('err'),
+        },
+      }),
     }),
     description: 'An error is passed back',
     expected: {
@@ -122,6 +128,7 @@ const tests = [
       probe_timeout_ms: 1,
       lnd: makeLnd({
         default: {
+          deletePayment: ({}, cbk) => cbk(),
           getChanInfo: ({channel}, cbk) => cbk(null, {
             capacity: '1',
             chan_point: '1:1',
@@ -223,7 +230,7 @@ const tests = [
         },
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => {
+          sendToRouteV2: (args, cbk) => {
             return cbk(null, {
               failure: {
                 chan_id: '1',

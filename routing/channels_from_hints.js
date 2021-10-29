@@ -1,4 +1,4 @@
-const {parsePaymentRequest} = require('invoices');
+const {parsePaymentRequest} = require('ln-service');
 
 const defaultCapacity = Number.MAX_SAFE_INTEGER;
 

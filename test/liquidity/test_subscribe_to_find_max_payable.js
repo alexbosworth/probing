@@ -1,7 +1,7 @@
 const {once} = require('events');
 const {promisify} = require('util');
 
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const {getChanInfoResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
@@ -18,6 +18,7 @@ const makeArgs = overrides => {
     emitter: {emit: () => {}},
     lnd: {
       default: {
+        deletePayment: ({}, cbk) => cbk(),
         getChanInfo: ({channel}, cbk) => cbk(null, {
           capacity: '1',
           chan_point: '1:1',
@@ -47,7 +48,7 @@ const makeArgs = overrides => {
       },
       router: {
         buildRoute: ({}, cbk) => cbk('err'),
-        sendToRoute: (args, cbk) => {
+        sendToRouteV2: (args, cbk) => {
           return cbk(null, {
             failure: {code: 'UNKNOWN_PAYMENT_HASH'},
           });

@@ -1,7 +1,7 @@
 const {once} = require('events');
 const {promisify} = require('util');
 
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const {getChanInfoResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
@@ -14,6 +14,7 @@ const nextTick = promisify(process.nextTick);
 const makeLnd = overrides => {
   const lnd = {
     default: {
+      deletePayment: ({}, cbk) => cbk(),
       getChanInfo: ({}, cbk) => cbk(null, getChanInfoResponse),
       getInfo: ({}, cbk) => cbk(null, getInfoRes()),
       listChannels: ({}, cbk) => cbk(null, {
@@ -66,7 +67,7 @@ const makeLnd = overrides => {
     },
     router: {
       buildRoute: ({}, cbk) => cbk('err'),
-      sendToRoute: ({}, cbk) => {
+      sendToRouteV2: ({}, cbk) => {
         return cbk(null, {preimage: Buffer.alloc(32)});
       },
     },
@@ -136,6 +137,7 @@ const makePathSuccessEvent = ({}) => {
           tokens: 0,
           total_mtokens: '1',
         },
+        confirmed_at: undefined,
         fee: 0,
         fee_mtokens: '0',
         hops: [{
@@ -192,7 +194,7 @@ const makePayingEvent = ({channel}) => {
 };
 
 const makeRoutingFailureEvent = ({channel}) => {
-  const event =         {
+  const event = {
     data: {
       route: {
         fee: 0,
@@ -256,6 +258,7 @@ const makeSuccessEvent = ({}) => {
             tokens: 0,
             total_mtokens: '1'
           },
+          confirmed_at: undefined,
           fee: 0,
           fee_mtokens: '0',
           hops: [{
@@ -335,7 +338,7 @@ const tests = [
       lnd: makeLnd({
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => {
+          sendToRouteV2: (args, cbk) => {
             return cbk(null, {failure: {code: 'TEMPORARY_CHANNEL_FAILURE'}});
           },
         },
@@ -359,7 +362,7 @@ const tests = [
       lnd: makeLnd({
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => cbk('err'),
+          sendToRouteV2: (args, cbk) => cbk('err'),
         },
       }),
       max_attempts: 1,
@@ -377,7 +380,7 @@ const tests = [
       lnd: makeLnd({
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => {
+          sendToRouteV2: (args, cbk) => {
             return cbk(null, {failure: {code: 'UNKNOWN_PAYMENT_HASH'}});
           },
         },
@@ -400,7 +403,7 @@ const tests = [
       lnd: makeLnd({
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => {
+          sendToRouteV2: (args, cbk) => {
             return cbk(null, {failure: {code: 'MPP_TIMEOUT'}});
           },
         },
@@ -420,7 +423,7 @@ const tests = [
       lnd: makeLnd({
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => {
+          sendToRouteV2: (args, cbk) => {
             const [firstHop] = args.route.hops;
 
             // Fail the route on one of the channels
@@ -513,7 +516,7 @@ const tests = [
       lnd: makeLnd({
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => {
+          sendToRouteV2: (args, cbk) => {
             return cbk(null, {failure: {code: 'TEMPORARY_CHANNEL_FAILURE'}});
           },
         },
@@ -554,7 +557,7 @@ const tests = [
       lnd: makeLnd({
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: (args, cbk) => {
+          sendToRouteV2: (args, cbk) => {
             const [firstHop] = args.route.hops;
 
             // Fail the route on one of the channels
@@ -703,6 +706,7 @@ const tests = [
                 tokens: 1,
                 total_mtokens: '3000',
               },
+              confirmed_at: undefined,
               fee: 0,
               fee_mtokens: '0',
               hops: [{
@@ -773,6 +777,7 @@ const tests = [
                 tokens: 1,
                 total_mtokens: '3000',
               },
+              confirmed_at: undefined,
               fee: 0,
               fee_mtokens: '0',
               hops: [{
@@ -819,6 +824,7 @@ const tests = [
                   tokens: 1,
                   total_mtokens: '3000',
                 },
+                confirmed_at: undefined,
                 fee: 0,
                 fee_mtokens: '0',
                 hops: [{
@@ -859,6 +865,7 @@ const tests = [
                   tokens: 1,
                   total_mtokens: '3000',
                 },
+                confirmed_at: undefined,
                 fee: 0,
                 fee_mtokens: '0',
                 hops: [{

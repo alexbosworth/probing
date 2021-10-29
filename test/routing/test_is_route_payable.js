@@ -1,4 +1,4 @@
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const {getInfoResponse} = require('./../fixtures');
 
@@ -54,10 +54,13 @@ const tests = [
       }],
       cltv: 1,
       lnd: {
-        default: {getInfo: ({}, cbk) => cbk(null, getInfoRes())},
+        default: {
+          deletePayment: ({}, cbk) => cbk(),
+          getInfo: ({}, cbk) => cbk(null, getInfoRes()),
+        },
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: ({}, cbk) => cbk(null, {
+          sendToRouteV2: ({}, cbk) => cbk(null, {
             failure: {code: 'INCORRECT_CLTV_EXPIRY'},
           },
         )},
@@ -94,7 +97,10 @@ const tests = [
       }],
       cltv: 1,
       lnd: {
-        default: {getInfo: ({}, cbk) => cbk(null, getInfoRes())},
+        default: {
+          deletePayment: ({}, cbk) => cbk(),
+          getInfo: ({}, cbk) => cbk(null, getInfoRes()),
+        },
         router: {
           buildRoute: ({}, cbk) => cbk(null, {
             route: {
@@ -149,10 +155,13 @@ const tests = [
       }],
       cltv: 1,
       lnd: {
-        default: {getInfo: ({}, cbk) => cbk(null, getInfoRes())},
+        default: {
+          deletePayment: ({}, cbk) => cbk(),
+          getInfo: ({}, cbk) => cbk(null, getInfoRes()),
+        },
         router: {
           buildRoute: ({}, cbk) => cbk('err'),
-          sendToRoute: ({}, cbk) => cbk(null, {
+          sendToRouteV2: ({}, cbk) => cbk(null, {
             failure: {code: 'UNKNOWN_PAYMENT_HASH'},
           },
         )},

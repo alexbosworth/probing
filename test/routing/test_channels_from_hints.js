@@ -1,4 +1,4 @@
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const {channels} = require('./../fixtures/hop_hints');
 const {channelsFromHints} = require('./../../routing');
