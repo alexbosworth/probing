@@ -10,7 +10,7 @@
     "async": "3.2.3",
     "asyncjs-util": "1.2.8",
     "bolt07": "1.8.0",
-    "ln-service": "53.4.0"
+    "ln-service": "53.7.3"
   },
   "description": "Lightning Network probing utilities",
   "devDependencies": {
@@ -34,5 +34,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/graph/*.js test/liquidity/*.js test/payments/*.js test/routing/*.js"
   },
-  "version": "2.0.2"
+  "version": "2.0.3"
 }
