@@ -1,6 +1,6 @@
 # Versions
 
-## Version 2.0.5
+## Version 2.0.6
 
 Node.js 12.20.0 or higher is now required
 
