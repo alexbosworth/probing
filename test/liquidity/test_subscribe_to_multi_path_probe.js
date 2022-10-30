@@ -158,6 +158,7 @@ const tests = [
           listChannels: ({}, cbk) => cbk(null, {
             channels: [{
               active: true,
+              alias_scids: [],
               capacity: 1,
               chan_id: '1',
               channel_point: '00:1',

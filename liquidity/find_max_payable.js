@@ -172,6 +172,47 @@ module.exports = (args, cbk) => {
           return cbk(null, {route, maximum: res.maximum});
         });
       }],
+
+      // Get channels again to confirm policies are consistent
+      refetchChannels: ['findMax', ({}, cbk) => {
+        const {channels} = channelsFromHints({request, routes});
+
+        return getPoliciesForChannels({channels, hops, lnd}, cbk);
+      }],
+
+      // Check that policies remained consistent
+      checkPolicies: [
+        'getChannels',
+        'refetchChannels',
+        ({getChannels, refetchChannels}, cbk) =>
+      {
+        const {channels} = getChannels;
+
+        // Find a channel where the fee increased from the start
+        const feeIncrease = refetchChannels.channels.find(channel => {
+          const [currentA, currentB] = channel.policies;
+          const {policies} = channels.find(n => n.id === channel.id);
+
+          const [initialA, initialB] = policies;
+
+          if (currentA.fee_rate > initialA.fee_rate) {
+            return true;
+          }
+
+          if (currentB.fee_rate > initialB.fee_rate) {
+            return true;
+          }
+
+          return false;
+        });
+
+        // Exit with error when there was a fee increase on a channel
+        if (!!feeIncrease) {
+          return cbk([503, 'FeeIncreasedOnChannel', {id: feeIncrease.id}]);
+        }
+
+        return cbk();
+      }],
     },
     returnResult({reject, resolve, of: 'findMax'}, cbk));
   });

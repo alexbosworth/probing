@@ -1,5 +1,9 @@
 # Versions
 
+## Version 3.0.0
+
+- Node.js 14 or higher is now required
+
 ## Version 2.0.6
 
 Node.js 12.20.0 or higher is now required
