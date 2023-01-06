@@ -8,13 +8,13 @@
   },
   "dependencies": {
     "async": "3.2.4",
-    "asyncjs-util": "1.2.10",
-    "bolt07": "1.8.2",
-    "ln-service": "54.2.4"
+    "asyncjs-util": "1.2.11",
+    "bolt07": "1.8.3",
+    "ln-service": "54.9.0"
   },
   "description": "Lightning Network probing utilities",
   "devDependencies": {
-    "@alexbosworth/tap": "15.0.11"
+    "@alexbosworth/tap": "15.0.12"
   },
   "engines": {
     "node": ">=14"
@@ -34,5 +34,5 @@
   "scripts": {
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/graph/*.js test/liquidity/*.js test/payments/*.js test/routing/*.js"
   },
-  "version": "3.0.0"
+  "version": "3.0.1"
 }
