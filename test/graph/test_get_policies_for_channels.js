@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const strictSame = require('node:assert').strict.deepStrictEqual;
+const test = require('node:test');
 
 const {channels} = require('./../fixtures/hop_hints');
 const {getPoliciesForChannels} = require('./../../graph');
@@ -182,7 +184,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, rejects, strictSame}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(getPoliciesForChannels(args), error, 'Got expected error');
     } else {
@@ -191,6 +193,6 @@ tests.forEach(({args, description, error, expected}) => {
       strictSame(channels, expected.channels, 'Got expected channels');
     }
 
-    return end();
+    return;
   });
 });

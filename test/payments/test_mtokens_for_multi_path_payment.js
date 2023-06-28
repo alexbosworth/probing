@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const strictSame = require('node:assert').strict.deepStrictEqual;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
 
 const method = require('./../../payments/mtokens_for_multi_path_payment');
 
@@ -59,13 +61,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, strictSame, throws}) => {
+  return test(description, (t, end) => {
     if (!!error) {
       throws(() => method(args), error, 'Got expected error');
     } else {
       const {sorted} = method(args);
 
-      strictSame(sorted, expected.sorted);
+      strictSame(sorted, expected.sorted, 'Got expected result');
     }
 
     return end();

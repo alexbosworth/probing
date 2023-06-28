@@ -1,7 +1,8 @@
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const strictSame = require('node:assert').strict.deepStrictEqual;
+const test = require('node:test');
 
 const {getInfoResponse} = require('./../fixtures');
-
 const isRoutePayable = require('./../../routing/is_route_payable');
 
 const getInfoRes = () => JSON.parse(JSON.stringify(getInfoResponse));
@@ -206,15 +207,15 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
-      rejects(isRoutePayable(args), error, 'Got expected error');
+      await rejects(isRoutePayable(args), error, 'Got expected error');
     } else {
       const payable = await isRoutePayable(args);
 
-      equal(payable.is_payable, expected.is_payable, 'Got is_payable');
+      strictSame(payable.is_payable, expected.is_payable, 'Got is_payable');
     }
 
-    return end();
+    return;
   });
 });

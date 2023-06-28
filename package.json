@@ -8,16 +8,13 @@
   },
   "dependencies": {
     "async": "3.2.4",
-    "asyncjs-util": "1.2.11",
-    "bolt07": "1.8.3",
-    "ln-service": "54.9.0"
+    "asyncjs-util": "1.2.12",
+    "bolt07": "1.8.4",
+    "ln-service": "56.7.1"
   },
   "description": "Lightning Network probing utilities",
-  "devDependencies": {
-    "@alexbosworth/tap": "15.0.12"
-  },
   "engines": {
-    "node": ">=14"
+    "node": ">=16"
   },
   "keywords": [
     "lightning",
@@ -32,7 +29,7 @@
     "url": "https://github.com/alexbosworth/probing.git"
   },
   "scripts": {
-    "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/graph/*.js test/liquidity/*.js test/payments/*.js test/routing/*.js"
+    "test": "npx nyc@15.1 node --experimental-test-coverage --test"
   },
-  "version": "3.0.1"
+  "version": "4.0.0"
 }

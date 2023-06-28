@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const strictSame = require('node:assert').strict.deepStrictEqual;
+const test = require('node:test');
 
 const {getInfoResponse} = require('./../fixtures');
 const {getSyntheticOutIgnores} = require('./../../');
@@ -100,7 +102,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, rejects, strictSame}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(getSyntheticOutIgnores(args), error, 'Got expected error');
     } else {
@@ -109,6 +111,6 @@ tests.forEach(({args, description, error, expected}) => {
       strictSame(ignore, expected.ignore, 'Got expected ignores');
     }
 
-    return end();
+    return;
   });
 });

@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const strictSame = require('node:assert').strict.deepStrictEqual;
+const test = require('node:test');
 
 const findMaxPayable = require('./../../liquidity/find_max_payable');
 const {getInfoResponse} = require('./../fixtures');
@@ -208,19 +210,19 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(findMaxPayable(args), error, 'Got expected error');
     } else if (expected.maximum) {
       const {maximum} = await findMaxPayable(args);
 
-      equal(maximum > expected.maximum - 100000, true, 'Got expected maximum');
+      strictSame(maximum > expected.maximum - 100000, true, 'Got maximum');
     } else {
       const {maximum} = await findMaxPayable(args);
 
-      equal(maximum, Number(), 'Max payable is zero');
+      strictSame(maximum, Number(), 'Max payable is zero');
     }
 
-    return end();
+    return;
   });
 });

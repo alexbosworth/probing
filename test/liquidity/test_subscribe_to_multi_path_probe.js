@@ -1,7 +1,8 @@
 const {once} = require('events');
 const {promisify} = require('util');
-
-const {test} = require('@alexbosworth/tap');
+const strictSame = require('node:assert').strict.deepStrictEqual;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
 
 const {getChanInfoResponse} = require('./../fixtures');
 const {getInfoResponse} = require('./../fixtures');
@@ -325,7 +326,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, strictSame, throws}) => {
+  return test(description, async () => {
     if (!!error) {
       throws(() => subscribeToMultiPathProbe(args), error, 'Got error');
     } else {
@@ -353,6 +354,6 @@ tests.forEach(({args, description, error, expected}) => {
       strictSame(events, expected.events, 'Got expected events');
     }
 
-    return end();
+    return;
   });
 });
