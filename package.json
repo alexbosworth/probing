@@ -9,7 +9,7 @@
   "dependencies": {
     "async": "3.2.5",
     "asyncjs-util": "1.2.12",
-    "ln-service": "57.14.2"
+    "ln-service": "57.14.4"
   },
   "description": "Lightning Network probing utilities",
   "engines": {
@@ -30,5 +30,5 @@
   "scripts": {
     "test": "npx nyc@15.1 node --experimental-test-coverage --test"
   },
-  "version": "5.0.2"
+  "version": "5.0.3"
 }

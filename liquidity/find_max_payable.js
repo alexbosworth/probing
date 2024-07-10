@@ -195,6 +195,14 @@ module.exports = (args, cbk) => {
 
           const [initialA, initialB] = policies;
 
+          if (currentA.base_fee_mtokens !== initialA.base_fee_mtokens) {
+            return true;
+          }
+
+          if (currentB.base_fee_mtokens !== initialB.base_fee_mtokens) {
+            return true;
+          }
+
           if (currentA.fee_rate > initialA.fee_rate) {
             return true;
           }
