@@ -7,9 +7,9 @@
     "url": "https://github.com/alexbosworth/probing/issues"
   },
   "dependencies": {
-    "async": "3.2.5",
+    "async": "3.2.6",
     "asyncjs-util": "1.2.12",
-    "ln-service": "57.14.4"
+    "ln-service": "57.22.2"
   },
   "description": "Lightning Network probing utilities",
   "engines": {
@@ -28,7 +28,7 @@
     "url": "https://github.com/alexbosworth/probing.git"
   },
   "scripts": {
-    "test": "npx nyc@15.1 node --experimental-test-coverage --test"
+    "test": "npx nyc@17.1 node --experimental-test-coverage --test"
   },
-  "version": "5.0.3"
+  "version": "5.0.4"
 }

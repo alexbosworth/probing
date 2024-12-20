@@ -10,7 +10,7 @@ const invalidCltvExpiry = 'IncorrectCltvExpiry';
 const invalidPaymentMessage = 'UnknownPaymentHash';
 const {isArray} = Array;
 const mtokensFromTokens = tokens => (BigInt(tokens) * BigInt(1e3)).toString();
-const pathfindingTimeoutMs = 1000 * 60 * 5;
+const pathfindingTimeoutMs = 1000 * 60 * 90;
 const payWithTimeout = timeout => asyncTimeout(payViaRoutes, timeout);
 
 /** Find out if route is payable

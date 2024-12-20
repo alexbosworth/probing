@@ -1,6 +1,6 @@
 # Versions
 
-## Version 5.0.3
+## Version 5.0.4
 
 - Node.js 18 or higher is now required
 
