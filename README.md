@@ -120,7 +120,6 @@ Subscribe to a payment over multiple paths
       fee_mtokens: <Fee Paid Millitokens String>
       hops: [{
         channel: <Standard Format Channel Id String>
-        channel_capacity: <Hop Channel Capacity Tokens Number>
         fee_mtokens: <Hop Forward Fee Millitokens String>
         forward_mtokens: <Hop Forwarded Millitokens String>
         timeout: <Hop CLTV Expiry Block Height Number>
@@ -134,7 +133,6 @@ Subscribe to a payment over multiple paths
         fee_mtokens: <Total Fee Millitokens To Pay String>
         hops: [{
           channel: <Standard Format Channel Id String>
-          channel_capacity: <Channel Capacity Tokens Number>
           fee: <Fee Number>
           fee_mtokens: <Fee Millitokens String>
           forward: <Forward Tokens Number>
@@ -159,7 +157,6 @@ Subscribe to a payment over multiple paths
         fee_mtokens: <Total Fee Millitokens To Pay String>
         hops: [{
           channel: <Standard Format Channel Id String>
-          channel_capacity: <Channel Capacity Tokens Number>
           fee: <Fee Number>
           fee_mtokens: <Fee Millitokens String>
           forward: <Forward Tokens Number>
@@ -194,7 +191,6 @@ Subscribe to a payment over multiple paths
         fee_mtokens: <Total Fee Millitokens To Pay String>
         hops: [{
           channel: <Standard Format Channel Id String>
-          channel_capacity: <Channel Capacity Tokens Number>
           fee: <Fee Number>
           fee_mtokens: <Fee Millitokens String>
           forward: <Forward Tokens Number>
@@ -225,7 +221,6 @@ Subscribe to a payment over multiple paths
         fee_mtokens: <Fee Paid Millitokens String>
         hops: [{
           channel: <Standard Format Channel Id String>
-          channel_capacity: <Hop Channel Capacity Tokens Number>
           fee_mtokens: <Hop Forward Fee Millitokens String>
           forward_mtokens: <Hop Forwarded Millitokens String>
           timeout: <Hop CLTV Expiry Block Height Number>
@@ -239,7 +234,6 @@ Subscribe to a payment over multiple paths
           fee_mtokens: <Total Fee Millitokens To Pay String>
           hops: [{
             channel: <Standard Format Channel Id String>
-            channel_capacity: <Channel Capacity Tokens Number>
             fee: <Fee Number>
             fee_mtokens: <Fee Millitokens String>
             forward: <Forward Tokens Number>
@@ -320,7 +314,6 @@ This method is not supported on versions below LND 0.10.0
         fee_mtokens: <Total Fee Millitokens To Pay String>
         hops: [{
           channel: <Standard Format Channel Id String>
-          channel_capacity: <Channel Capacity Tokens Number>
           fee: <Fee Number>
           fee_mtokens: <Fee Millitokens String>
           forward: <Forward Tokens Number>
@@ -365,7 +358,6 @@ This method is not supported on versions below LND 0.10.0
         fee_mtokens: <Total Fee Millitokens To Pay String>
         hops: [{
           channel: <Standard Format Channel Id String>
-          channel_capacity: <Channel Capacity Tokens Number>
           fee: <Fee Number>
           fee_mtokens: <Fee Millitokens String>
           forward: <Forward Tokens Number>
@@ -402,7 +394,6 @@ This method is not supported on versions below LND 0.10.0
         fee_mtokens: <Total Fee Millitokens To Pay String>
         hops: [{
           channel: <Standard Format Channel Id String>
-          channel_capacity: <Channel Capacity Tokens Number>
           fee: <Fee Number>
           fee_mtokens: <Fee Millitokens String>
           forward: <Forward Tokens Number>

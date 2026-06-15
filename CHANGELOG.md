@@ -1,5 +1,9 @@
 # Versions
 
+## Version 7.0.0
+
+- Node.js 22 or higher is now required
+
 ## Version 6.0.0
 
 - Node.js 20 or higher is now required

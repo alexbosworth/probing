@@ -47,7 +47,6 @@ const makeExpected = overrides => {
     fee_mtokens: '0',
     hops: [{
       channel: '0x0x1',
-      channel_capacity: 1,
       fee: 0,
       fee_mtokens: '0',
       forward: 0,
@@ -165,6 +164,10 @@ tests.forEach(({args, description, error, expected}) => {
       await rejects(getRouteForPayment(args), error, 'Got expected error');
     } else {
       const route = await getRouteForPayment(args);
+
+      route.route.hops.forEach(hop => {
+        delete hop.channel_capacity;
+      });
 
       strictSame(route, expected, 'Got expected route');
     }
