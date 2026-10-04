@@ -354,3 +354,147 @@ tests.forEach(({args, description, error, expected}) => {
     return;
   });
 });
+
+// Make an LND with a channel that finds a route and responds with a code
+const makeRoutingLnd = ({code, index}) => {
+  let queries = 0;
+
+  return makeLnd({
+    default: makeLndDefault({
+      listChannels: ({}, cbk) => cbk(null, {
+        channels: [{
+          active: true,
+          alias_scids: [],
+          capacity: 1,
+          chan_id: '1',
+          channel_point: '00:1',
+          close_address: 'cooperative_close_address',
+          commit_fee: '1',
+          commit_weight: '1',
+          commitment_type: 'LEGACY',
+          fee_per_kw: '1',
+          initiator: true,
+          local_balance: '1',
+          local_chan_reserve_sat: '1',
+          local_constraints: {
+            chan_reserve_sat: '1',
+            csv_delay: 1,
+            dust_limit_sat: '1',
+            max_accepted_htlcs: 1,
+            max_pending_amt_msat: '1',
+            min_htlc_msat: '1',
+          },
+          num_updates: 1,
+          pending_htlcs: [],
+          private: true,
+          remote_balance: 1,
+          remote_chan_reserve_sat: '1',
+          remote_constraints: {
+            chan_reserve_sat: '1',
+            csv_delay: 1,
+            dust_limit_sat: '1',
+            max_accepted_htlcs: 1,
+            max_pending_amt_msat: '1',
+            min_htlc_msat: '1',
+          },
+          remote_pubkey: '00',
+          thaw_height: 0,
+          total_satoshis_received: 1,
+          total_satoshis_sent: 1,
+          unsettled_balance: 1,
+        }],
+      }),
+      queryRoutes: ({}, cbk) => {
+        if (!!queries++) {
+          return cbk(null, {routes: [], success_prob: 1});
+        }
+
+        return cbk(null, {
+          routes: [{
+            hops: [{
+              amt_to_forward_msat: '1',
+              chan_id: '1',
+              custom_records: {},
+              expiry: 1,
+              fee_msat: '1',
+              pub_key: '00',
+            }],
+            total_amt: 1,
+            total_amt_msat: '1',
+            total_fees: '1',
+            total_fees_msat: '1',
+            total_time_lock: 1,
+          }],
+          success_prob: 1,
+        });
+      },
+    }),
+    router: {
+      buildRoute: ({}, cbk) => cbk('err'),
+      sendToRouteV2: ({}, cbk) => cbk(null, {
+        failure: {code, chan_id: '1', failure_source_index: index},
+        preimage: Buffer.alloc(Number()),
+      }),
+    },
+  });
+};
+
+// Wait for a terminal event and return the events that were emitted
+const collectEvents = sub => {
+  const events = [];
+
+  ['evaluating', 'path', 'probing', 'routing_failure', 'routing_success']
+    .forEach(event => sub.on(event, data => events.push({data, event})));
+
+  return new Promise(resolve => {
+    ['error', 'failure', 'success'].forEach(event => {
+      return sub.on(event, data => {
+        events.push({data, event});
+
+        return resolve(events);
+      });
+    });
+  });
+};
+
+test('An error finding a path is passed back', async () => {
+  const lnd = makeLnd({
+    default: makeLndDefault({listChannels: ({}, cbk) => cbk('err')}),
+  });
+
+  const sub = subscribeToMultiPathProbe(makeArgs({lnd}));
+
+  const events = await collectEvents(sub);
+
+  const [{data, event}] = events;
+
+  strictSame(event, 'error', 'Got error event');
+  strictSame(data[0], 503, 'Got error finding path');
+});
+
+test('Routing failures are passed back', async () => {
+  const sub = subscribeToMultiPathProbe(makeArgs({
+    lnd: makeRoutingLnd({code: 'TEMPORARY_CHANNEL_FAILURE', index: 0}),
+  }));
+
+  const events = await collectEvents(sub);
+
+  const [failure] = events.filter(n => n.event === 'routing_failure');
+
+  strictSame(failure.data.reason, 'TemporaryChannelFailure', 'Got failure');
+  strictSame(events.pop(), {data: {}, event: 'failure'}, 'Probe failed');
+});
+
+test('Probing stops when the maximum number of paths is found', async () => {
+  const sub = subscribeToMultiPathProbe(makeArgs({
+    lnd: makeRoutingLnd({code: 'UNKNOWN_PAYMENT_HASH', index: 1}),
+    max_paths: 1,
+  }));
+
+  const events = await collectEvents(sub);
+
+  const {data, event} = events.pop();
+
+  strictSame(event, 'success', 'Probe succeeded');
+  strictSame(data.paths.length, 1, 'Found one path');
+});

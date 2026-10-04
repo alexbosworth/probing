@@ -9,9 +9,7 @@ const multiProbeIgnores = require('./multi_probe_ignores');
 const subscribeToFindMaxPayable = require('./subscribe_to_find_max_payable');
 
 const defaultStartingMillitokens = (BigInt(1e5) * BigInt(1e3)).toString();
-const flatten = arr => [].concat(...arr);
 const {isArray} = Array;
-const {max} = Math;
 const {nextTick} = process;
 
 /** Subscribe to a search within a multi probe given past probes
@@ -211,7 +209,7 @@ module.exports = args => {
     throw [400, 'ExpectedRecordOfProbesToFindMultiProbePath'];
   }
 
-  if (args.probes.map(n => !!n).length !== args.probes.length) {
+  if (args.probes.filter(n => !!n).length !== args.probes.length) {
     throw [400, 'ExpectedArrayOfProbeDetailsToFindMultiProbePath'];
   }
 

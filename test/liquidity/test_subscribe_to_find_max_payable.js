@@ -106,3 +106,26 @@ tests.forEach(({args, description, error, expected}) => {
     return;
   });
 });
+
+test('A maximum payable amount is found', async () => {
+  const sub = subscribeToFindMaxPayable(makeArgs({}));
+
+  const [{maximum, route}] = await once(sub, 'success');
+
+  strictSame(maximum > 0, true, 'Got maximum payable amount');
+  strictSame(!!route, true, 'Got route for maximum payable amount');
+});
+
+test('A failure is emitted when no amount is payable', async () => {
+  const args = makeArgs({});
+
+  args.lnd.router.sendToRouteV2 = ({}, cbk) => cbk(null, {
+    failure: {code: 'TEMPORARY_CHANNEL_FAILURE'},
+  });
+
+  const sub = subscribeToFindMaxPayable(args);
+
+  const [failure] = await once(sub, 'failure');
+
+  strictSame(failure, {}, 'Got failure');
+});

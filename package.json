@@ -1,7 +1,10 @@
 {
+  "allowScripts": {
+    "protobufjs@7.6.6": true
+  },
   "author": {
     "name": "Alex Bosworth",
-    "url": "https://twitter.com/alexbosworth"
+    "url": "https://x.com/alexbosworth"
   },
   "bugs": {
     "url": "https://github.com/alexbosworth/probing/issues"
@@ -9,12 +12,20 @@
   "dependencies": {
     "async": "3.2.6",
     "asyncjs-util": "1.2.12",
-    "ln-service": "59.1.1"
+    "ln-service": "60.1.2"
   },
   "description": "Lightning Network probing utilities",
   "engines": {
     "node": ">=22"
   },
+  "files": [
+    "CHANGELOG.md",
+    "graph/",
+    "index.js",
+    "liquidity/",
+    "payments/",
+    "routing/"
+  ],
   "keywords": [
     "lightning",
     "lightning-network",
@@ -25,10 +36,10 @@
   "name": "probing",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alexbosworth/probing.git"
+    "url": "git+https://github.com/alexbosworth/probing.git"
   },
   "scripts": {
-    "test": "npx nyc@17.1 node --experimental-test-coverage --test"
+    "test": "node --experimental-test-coverage --test"
   },
-  "version": "7.0.0"
+  "version": "7.0.1"
 }

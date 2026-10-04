@@ -119,7 +119,7 @@ const tests = [
               total_time_lock: 1,
             },
           }),
-          sendToRoute: ({}, cbk) => setTimeout(() => cbk('err'), 10),
+          sendToRouteV2: ({}, cbk) => setTimeout(() => cbk('err'), 10),
         },
       },
       timeout: 1,

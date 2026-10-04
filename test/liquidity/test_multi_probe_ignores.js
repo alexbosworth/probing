@@ -97,6 +97,11 @@ const tests = [
     error: 'ExpectedArrayOfRelaysToGenerateMultiProbeIgnores',
   },
   {
+    args: makeArgs({probes: [{relays: ['a']}]}),
+    description: 'Liquidity in probes array is required',
+    error: 'ExpectedLiquidityDataToGenerateMultiProbeIgnores',
+  },
+  {
     args: makeArgs({routes: {}}),
     description: 'Routes should be an array',
     error: 'ExpectedRoutesToBeArrayWhenGeneratingMultiProbeIgnores',
@@ -260,6 +265,37 @@ const tests = [
         {
           from_public_key: 'e',
           to_public_key: 'f',
+        },
+      ],
+    },
+  },
+  {
+    args: makeArgs({anti: [{from_public_key: 'a', to_public_key: 'b'}]}),
+    description: 'Allowed stacking edges are not ignored',
+    expected: {
+      ignore: [
+        {
+          from_public_key: 'd',
+        },
+        {
+          from_public_key: 'b',
+          to_public_key: 'c',
+        },
+        {
+          from_public_key: 'b',
+          to_public_key: 'c',
+        },
+        {
+          from_public_key: 'b',
+          to_public_key: 'c',
+        },
+        {
+          from_public_key: 'e',
+          to_public_key: 'f',
+        },
+        {
+          from_public_key: 'f',
+          to_public_key: 'g',
         },
       ],
     },

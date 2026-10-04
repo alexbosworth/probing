@@ -156,6 +156,11 @@ const tests = [
     error: [400, 'ExpectedRecordOfProbesToFindMultiProbePath'],
   },
   {
+    args: makeArgs({probes: [null]}),
+    description: 'Probes must have details',
+    error: [400, 'ExpectedArrayOfProbeDetailsToFindMultiProbePath'],
+  },
+  {
     args: makeArgs({public_key: undefined}),
     description: 'A source public key is required',
     error: [400, 'ExpectedSourcePublicKeyToFindMultiProbePath'],
@@ -476,4 +481,142 @@ tests.forEach(({args, description, error, expected}) => {
       strictSame(events, expected.events, 'Got expected events');
     }
   });
+});
+
+const queryRoutesResponse = {
+  routes: [{
+    hops: [{
+      amt_to_forward_msat: '1',
+      chan_id: '1',
+      custom_records: {},
+      expiry: 1,
+      fee_msat: '1',
+      pub_key: '00',
+    }],
+    total_amt: 1,
+    total_amt_msat: '1',
+    total_fees: '1',
+    total_fees_msat: '1',
+    total_time_lock: 1,
+  }],
+  success_prob: 1,
+};
+
+// Make an LND that finds a route and then responds to sends with codes
+const makeRoutingLnd = ({codes, index, routes}) => {
+  const lnd = makeLnd({});
+  let queries = 0;
+  let sends = 0;
+
+  lnd.default.queryRoutes = ({}, cbk) => {
+    if (queries++ >= (routes || 1)) {
+      return cbk(null, {routes: [], success_prob: 1});
+    }
+
+    return cbk(null, queryRoutesResponse);
+  };
+
+  lnd.router.sendToRouteV2 = ({}, cbk) => {
+    const code = codes[Math.min(sends++, codes.length - 1)];
+
+    return cbk(null, {
+      failure: {
+        code,
+        chan_id: '1',
+        failure_source_index: index === undefined ? 1 : index,
+      },
+      preimage: Buffer.alloc(Number()),
+    });
+  };
+
+  return lnd;
+};
+
+// Collect events until the subscription reaches a terminal event
+const collectEvents = sub => {
+  const events = [];
+
+  [
+    'evaluating',
+    'probing',
+    'routing_failure',
+    'routing_success',
+  ]
+    .forEach(event => sub.on(event, data => events.push({data, event})));
+
+  return new Promise(resolve => {
+    ['error', 'failure', 'success'].forEach(event => {
+      return sub.on(event, data => {
+        events.push({data, event});
+
+        return resolve(events);
+      });
+    });
+  });
+};
+
+test('A routing failure is emitted when probing hits a failure', async () => {
+  const sub = method(makeArgs({
+    lnd: makeRoutingLnd({codes: ['TEMPORARY_CHANNEL_FAILURE'], index: 0}),
+  }));
+
+  const events = await collectEvents(sub);
+
+  const [failure] = events.filter(n => n.event === 'routing_failure');
+
+  strictSame(failure.data.reason, 'TemporaryChannelFailure', 'Got failure');
+  strictSame(events.pop(), {data: {}, event: 'failure'}, 'Search failed');
+});
+
+test('An error finding max liquidity is emitted', async () => {
+  const sub = method(makeArgs({
+    lnd: makeRoutingLnd({
+      codes: ['UNKNOWN_PAYMENT_HASH', 'INCORRECT_CLTV_EXPIRY'],
+    }),
+    probes: [],
+  }));
+
+  const events = await collectEvents(sub);
+
+  const [error] = events.pop().data;
+
+  strictSame(error, 503, 'Got error finding max liquidity');
+});
+
+test('A failure to find max liquidity is emitted', async () => {
+  const sub = method(makeArgs({
+    lnd: makeRoutingLnd({
+      codes: ['UNKNOWN_PAYMENT_HASH', 'TEMPORARY_CHANNEL_FAILURE'],
+    }),
+    probes: [],
+  }));
+
+  const events = await collectEvents(sub);
+
+  strictSame(events.pop(), {data: {}, event: 'failure'}, 'Got failure');
+});
+
+test('A path is found with max liquidity', async () => {
+  const sub = method(makeArgs({
+    lnd: makeRoutingLnd({codes: ['UNKNOWN_PAYMENT_HASH']}),
+    probes: [],
+  }));
+
+  const events = await collectEvents(sub);
+
+  const {data, event} = events.pop();
+
+  strictSame(event, 'success', 'Found path');
+  strictSame(data.channels, ['0x0x1'], 'Got path channels');
+  strictSame(data.relays, ['00'], 'Got path relays');
+});
+
+test('No channels to probe out of results in a failure', async () => {
+  const lnd = makeLnd({});
+
+  lnd.default.listChannels = ({}, cbk) => cbk(null, {channels: []});
+
+  const events = await collectEvents(method(makeArgs({lnd})));
+
+  strictSame(events, [{data: {}, event: 'failure'}], 'Got failure');
 });

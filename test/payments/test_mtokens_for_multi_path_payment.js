@@ -1,74 +1,39 @@
 const strictSame = require('node:assert').strict.deepStrictEqual;
 const test = require('node:test');
-const {throws} = require('node:assert').strict;
 
 const method = require('./../../payments/mtokens_for_multi_path_payment');
 
-const makeArgs = overrides => {
-  const args = {};
-
-  Object.keys(overrides).forEach(key => args[key] = overrides[key]);
-
-  return args;
-};
-
 const tests = [
   {
-    args: {failed: [], liquidity: 1e6, paying: [], total: (1e6).toString()},
-    description: 'Initial payment selects appropriate liquidity',
-    expected: {mtokens: (1e6).toString()},
+    args: {liquidity: 1e3, paying: [], total: '1000000'},
+    description: 'Initial payment selects the total needed',
+    expected: {mtokens: '1000000'},
   },
   {
-    args: {failed: [], liquidity: 1e4, paying: [], total: (1e6).toString()},
-    description: 'Payment is locked down to the liquidity available',
-    expected: {mtokens: (1e4).toString()},
+    args: {liquidity: 1e2, paying: [], total: '1000000'},
+    description: 'Payment is limited to the liquidity available',
+    expected: {mtokens: '100000'},
   },
   {
-    args: {failed: [], liquidity: 1e6, paying: [], total: (1e10).toString()},
-    description: 'Payment is locked down to the total needed',
-    expected: {mtokens: (1e6).toString()},
+    args: {liquidity: 1e6, paying: [], total: '5000'},
+    description: 'Payment is limited to the total needed',
+    expected: {mtokens: '5000'},
   },
   {
-    args: {
-      failed: [],
-      liquidity: 1e6,
-      paying: [{id: 0, mtokens: (1e3).toString()}],
-      total: (1e6).toString(),
-    },
+    args: {liquidity: 1e6, paying: [{mtokens: '1000'}], total: '1000000'},
     description: 'An existing payment in flight lowers the payment',
-    expected: {mtokens: (1e3).toString()},
+    expected: {mtokens: '999000'},
   },
   {
-    args: {
-      failed: [0],
-      liquidity: 1e6,
-      paying: [{id: 0, mtokens: (1e3).toString()}],
-      total: (1e6).toString(),
-    },
-    description: 'A failed payment does not lower the payment',
-    expected: {mtokens: (1e6).toString()},
-  },
-  {
-    args: {
-      failed: [],
-      liquidity: 1e6,
-      paying: [{id: 0, mtokens: (1e6).toString()}],
-      total: (1e6).toString(),
-    },
+    args: {liquidity: 1e6, paying: [{mtokens: '1000000'}], total: '1000000'},
     description: 'A payment in progress does not need additional mtokens',
     expected: {},
   },
 ];
 
-tests.forEach(({args, description, error, expected}) => {
+tests.forEach(({args, description, expected}) => {
   return test(description, (t, end) => {
-    if (!!error) {
-      throws(() => method(args), error, 'Got expected error');
-    } else {
-      const {sorted} = method(args);
-
-      strictSame(sorted, expected.sorted, 'Got expected result');
-    }
+    strictSame(method(args), expected, 'Got expected result');
 
     return end();
   });

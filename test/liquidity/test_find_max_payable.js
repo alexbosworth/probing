@@ -6,6 +6,7 @@ const findMaxPayable = require('./../../liquidity/find_max_payable');
 const {getInfoResponse} = require('./../fixtures');
 
 const getInfoRes = () => JSON.parse(JSON.stringify(getInfoResponse));
+const {min} = Math;
 
 const makeArgs = overrides => {
   const args = {
@@ -58,6 +59,59 @@ const makeArgs = overrides => {
   Object.keys(overrides).forEach(key => args[key] = overrides[key]);
 
   return args;
+};
+
+const makeLnd = ({policies, sends}) => {
+  let chanInfoCalls = 0;
+  let sendCalls = 0;
+
+  return {
+    default: {
+      deletePayment: ({}, cbk) => cbk(),
+      getChanInfo: ({channel}, cbk) => {
+        const [node1, node2] = (policies || [])[chanInfoCalls++] || [];
+
+        return cbk(null, {
+          capacity: '1',
+          chan_point: '1:1',
+          channel_id: 1,
+          node1_policy: {
+            disabled: false,
+            fee_base_msat: '1',
+            fee_rate_milli_msat: '1',
+            last_update: 1,
+            max_htlc_msat: (21e8).toString(),
+            min_htlc: '1',
+            time_lock_delta: 1,
+            ...node1,
+          },
+          node1_pub: 'a',
+          node2_policy: {
+            disabled: false,
+            fee_base_msat: '2',
+            fee_rate_milli_msat: '2',
+            last_update: 2,
+            max_htlc_msat: (21e8).toString(),
+            min_htlc: '2',
+            time_lock_delta: 2,
+            ...node2,
+          },
+          node2_pub: 'b',
+        });
+      },
+      getInfo: ({}, cbk) => cbk(null, getInfoRes()),
+    },
+    router: {
+      buildRoute: ({}, cbk) => cbk('err'),
+      sendToRouteV2: (args, cbk) => {
+        const codes = sends || ['UNKNOWN_PAYMENT_HASH'];
+
+        const code = codes[min(sendCalls++, codes.length - 1)];
+
+        return cbk(null, {failure: {code}});
+      },
+    },
+  };
 };
 
 const tests = [
@@ -206,6 +260,55 @@ const tests = [
     },
     description: 'Get maximum fails to find any route',
     expected: {},
+  },
+  {
+    args: makeArgs({delay: undefined, lnd: makeLnd({}), max: 1}),
+    description: 'A default attempt delay is used when no delay is specified',
+    expected: {maximum: 1},
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({sends: ['UNKNOWN_PAYMENT_HASH', 'INCORRECT_CLTV_EXPIRY']}),
+    }),
+    description: 'Errors probing the route while searching are returned',
+    error: [503, 'UnexpectedErrorCode'],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({
+        sends: ['UNKNOWN_PAYMENT_HASH', 'TEMPORARY_CHANNEL_FAILURE'],
+      }),
+    }),
+    description: 'No payable amount is found after a minimal amount is payable',
+    expected: {},
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({policies: [[], [{fee_base_msat: '3'}]]}),
+    }),
+    description: 'A change in the first base fee is an error',
+    error: [503, 'FeeIncreasedOnChannel', {id: '0x0x0'}],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({policies: [[], [{}, {fee_base_msat: '3'}]]}),
+    }),
+    description: 'A change in the second base fee is an error',
+    error: [503, 'FeeIncreasedOnChannel', {id: '0x0x0'}],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({policies: [[], [{fee_rate_milli_msat: '3'}]]}),
+    }),
+    description: 'An increase in the first fee rate is an error',
+    error: [503, 'FeeIncreasedOnChannel', {id: '0x0x0'}],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({policies: [[], [{}, {fee_rate_milli_msat: '3'}]]}),
+    }),
+    description: 'An increase in the second fee rate is an error',
+    error: [503, 'FeeIncreasedOnChannel', {id: '0x0x0'}],
   },
 ];
 

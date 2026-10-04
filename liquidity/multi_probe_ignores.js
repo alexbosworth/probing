@@ -158,13 +158,15 @@ module.exports = ({anti, channels, from, ignore, mtokens, probes, routes}) => {
     return {ignore: normalIgnores};
   }
 
-  const [firstRoute] = routes || [];
+  const allowed = routes || [];
+
+  const [firstRoute] = allowed;
 
   // The final hop includes the destination public key
   const [finalHop] = (firstRoute || []).slice().reverse();
 
   // When routes are specified, never ignore them
-  const antiIgnores = (anti || []).concat(flatten(routes.map(route => {
+  const antiIgnores = (anti || []).concat(flatten(allowed.map(route => {
     return route.map(n => n.public_key).map((hop, i, hops) => {
       if (!i) {
         return {};
@@ -174,7 +176,7 @@ module.exports = ({anti, channels, from, ignore, mtokens, probes, routes}) => {
       const prevHop = hops[i - [hop].length];
 
       return {
-        from_public_key: !!prevHop ? prevHop : getKey.public_key,
+        from_public_key: prevHop,
         to_public_key: !!nextHop ? nextHop : finalHop.public_key,
       };
     });

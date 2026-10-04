@@ -87,8 +87,6 @@ module.exports = ({cltv, delay, hops, lnd, max, request, routes}) => {
 
       return emit('success', {maximum: res.maximum, route: res.route});
     });
-
-    return;
   });
 
   return emitter;

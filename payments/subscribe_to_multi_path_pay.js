@@ -16,7 +16,6 @@ const isRejected = n => n.reason === 'UnknownPaymentHash';
 const maxAttempts = 10;
 const millitokensAsTokens = n => Number(BigInt(n) / BigInt(1e3));
 const {nextTick} = process;
-const sumMtokens = arr => arr.reduce((sum, n) => sum + n, BigInt(Number()));
 const sumTokens = arr => arr.reduce((sum, n) => sum + n, Number());
 const tokensAsMillitokens = tokens => BigInt(tokens) * BigInt(1e3);
 
@@ -259,7 +258,6 @@ module.exports = args => {
         // Calculate how many mtokens should be used on this path
         const {mtokens} = mtokensForMultiPathPayment({
           paying,
-          failed: failed.map(n => n.id),
           liquidity: path.liquidity,
           total: args.mtokens,
         });
@@ -325,7 +323,7 @@ module.exports = args => {
           });
 
           sub.on('error', err => {
-            failed.push(payment);
+            failed.push(id);
 
             return cbk();
           });
@@ -358,7 +356,7 @@ module.exports = args => {
             failures.push(failure);
 
             // Record failure of this path
-            failed.push(payment);
+            failed.push(id);
 
             // Notify listeners that a path failed
             emitter.emit('routing_failure', failure);
